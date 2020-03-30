@@ -17,5 +17,10 @@ if __name__ == "__main__":
     # make energy plot
     eng_data = a.get_traj_energies()
     plot_engs_vs_time("energy_vs_time", eng_data, tstart=0.0)
-    plot_av_engs_vs_time("average_energy_vs_time", eng_data, tstart=0.0)
+    plot_av_engs_vs_time("average_energy_vs_time", \
+        eng_data, tstart=0.0, tunit='fs')
+
+    etot_data = {k:eng_data[k] for k in eng_data if k not in ['ekin','epot']}
+    plot_av_engs_vs_time("average_total_energy_vs_time", \
+        etot_data, tstart=0.0, tunit='fs')
 

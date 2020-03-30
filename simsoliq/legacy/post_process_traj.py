@@ -30,31 +30,31 @@ sys.path.append("/home/cat/heenen/Workspace/TOOLS/CatHelpers")
 from cathelpers.atom_manipulators import find_max_empty_space
 from cathelpers.misc import lines_key, _load_pickle_file, _write_pickle_file
 
-def _set_plotting_env(width=3.37,height=3.37/ golden_ratio *1.5/2,\
-                    lrbt=[0.135,0.80,0.25,0.95],fsize=9.0,font='helvetica'):
-    # set plot geometry
-    rcParams['figure.figsize'] = (width, height) # x,y
-    rcParams['font.size'] = fsize
-    rcParams['figure.subplot.left'] = lrbt[0]  # the left side of the subplots of the figure
-    rcParams['figure.subplot.right'] = lrbt[1] #0.965 # the right side of the subplots of the figure
-    rcParams['figure.subplot.bottom'] = lrbt[2] # the bottom of the subplots of the figure
-    rcParams['figure.subplot.top'] = lrbt[3] # the bottom of the subplots of the figure
-
-    rcParams['xtick.top'] = True
-    rcParams['xtick.direction'] = 'in'
-    rcParams['ytick.right'] = True
-    rcParams['ytick.direction'] = 'in'
-
-    rcParams['legend.fancybox'] = False
-    #rcParams['legend.framealpha'] = 1.0
-    rcParams['legend.edgecolor'] = 'k'
-    #matplotlibhelpers.set_latex(rcParams,font=font) #poster
-
 
 
 #############################################################
 ################## NOTE: already worked in ##################
 ##############################################################
+#def _set_plotting_env(width=3.37,height=3.37/ golden_ratio *1.5/2,\
+#                    lrbt=[0.135,0.80,0.25,0.95],fsize=9.0,font='helvetica'):
+#    # set plot geometry
+#    rcParams['figure.figsize'] = (width, height) # x,y
+#    rcParams['font.size'] = fsize
+#    rcParams['figure.subplot.left'] = lrbt[0]  # the left side of the subplots of the figure
+#    rcParams['figure.subplot.right'] = lrbt[1] #0.965 # the right side of the subplots of the figure
+#    rcParams['figure.subplot.bottom'] = lrbt[2] # the bottom of the subplots of the figure
+#    rcParams['figure.subplot.top'] = lrbt[3] # the bottom of the subplots of the figure
+#
+#    rcParams['xtick.top'] = True
+#    rcParams['xtick.direction'] = 'in'
+#    rcParams['ytick.right'] = True
+#    rcParams['ytick.direction'] = 'in'
+#
+#    rcParams['legend.fancybox'] = False
+#    #rcParams['legend.framealpha'] = 1.0
+#    rcParams['legend.edgecolor'] = 'k'
+#    #matplotlibhelpers.set_latex(rcParams,font=font) #poster
+
 #def _get_val_OUTCAR(filename,string,i,j):
 #    tstr = popen("grep '%s' %s"%(string,filename)).read().split()
 #    val = [float(s) for s in tstr[i::j]]
@@ -110,78 +110,56 @@ def _set_plotting_env(width=3.37,height=3.37/ golden_ratio *1.5/2,\
 #        for key in dat:
 #            dat[key] = np.hstack((dat[key],data[i][key]))
 #    return(dat)
-#############################################################
-#############################################################
-#############################################################
     
-def plot_av_dE_vs_time(filename,dat1,dat2,ref,tstart):
-    label = {'epot':r'$\langle \Delta$E$_{\mathrm{pot}} \rangle$ (eV)',\
-            'etot':r'$\langle \Delta$E$_{\mathrm{tot}} \rangle$ (eV)',\
-            'x':r'simulation time (ps)'}
-    ekey = ['epot','etot']
-    
-    # adjust length of data
-    maxlen = max([d['epot'].size for d in [dat1,dat2]])
-    for dat in [dat1,dat2]:
-        for key in ekey:
-            if dat[key].size < maxlen:
-                d = np.zeros(maxlen)
-                d[:dat[key].size] = dat[key]
-                d[dat[key].size:] = np.mean(dat[key])
-                dat[key] = d
-
-    dat = {ek:_running_av(dat1[ek])-_running_av(dat2[ek])-ref for ek in ekey}
-    _plot_xe_vs_time(filename,dat,label,_nofunc,ekeys=ekey,tstart=tstart)
-    # I think this is wrong averaging
-   #dat = {ek:dat1[ek]-dat2[ek]-ref for ek in ekey}
-   #_plot_xe_vs_time(filename,dat,label,_running_av,ekeys=ekey,tstart=tstart)
-
-def plot_engs_vs_time(filename, dat, tstart):
-    label = {'ekin':r'E$_{\mathrm{kin}}$ (eV)',\
-            'epot':r'E$_{\mathrm{pot}}$ (eV)',\
-            'etot':r'E$_{\mathrm{tot}}$ (eV)',\
-            'x':r'simulation time (ps)'}
-    _plot_xe_vs_time(filename,dat,label,_nofunc,tstart=tstart)
-
-def _nofunc(indat):
-    return(indat)
-
-def plot_av_engs_vs_time(filename, dat, tstart):
-    label = {'ekin':r'$\langle$E$_{\mathrm{kin}} \rangle$ (eV)',\
-            'epot':r'$\langle$E$_{\mathrm{pot}} \rangle$ (eV)',\
-            'etot':r'E$_{\mathrm{tot}}$ (eV)',\
-            'x':r'simulation time (ps)'}
-    _plot_xe_vs_time(filename,dat,label,_running_av,tstart=tstart)
-
-def _running_av(indat):
-    y = np.cumsum(indat)/np.arange(1,indat.size+1)
-    return(y)
-
-def _plot_xe_vs_time(filename,dat,label,yfunc,ekeys=['ekin','epot','etot'],tstart=1e3):
-    _set_plotting_env(width=3.37,height=3.37,#/ golden_ratio *1.5/2,\
-                   lrbt=[0.25,0.95,0.15,0.95],fsize=9.0)
-    fig = plt.figure()
-    n = 0; axes = []
-    for e in ekeys:
-        ax = fig.add_subplot(len(ekeys)*100+11+n)
-        t = np.arange(tstart,dat[e].size)/1000.
-        y = yfunc(dat[e][int(tstart):])
-        ax.plot(t[::20],y[::20],color='k')
-        ax.set_ylabel(label[e])
-        axes.append(ax)
-        n += 1
-        # add line indicating AIMD traj restarts
-        if 'trajlen' in dat:
-            ttj = 0.0
-            for tt in dat['trajlen']:
-                ttj += tt
-                ax.axvline(x=ttj/1000.,lw=0.5,ls=':',color='k')
-    axes[-1].set_xlabel(label['x'])
-    [axes[a].set_xticklabels([]) for a in range(len(axes)-1)]
-    plt.subplots_adjust(hspace=0.0)
-    writefig(filename)
-   #matplotlibhelpers.write(filename,folder='output',\
-   #    write_info = False,write_png=False,write_pdf=True,write_eps=False)
+#def plot_engs_vs_time(filename, dat, tstart):
+#    label = {'ekin':r'E$_{\mathrm{kin}}$ (eV)',\
+#            'epot':r'E$_{\mathrm{pot}}$ (eV)',\
+#            'etot':r'E$_{\mathrm{tot}}$ (eV)',\
+#            'x':r'simulation time (ps)'}
+#    _plot_xe_vs_time(filename,dat,label,_nofunc,tstart=tstart)
+#
+#def _nofunc(indat):
+#    return(indat)
+#
+#def plot_av_engs_vs_time(filename, dat, tstart):
+#    label = {'ekin':r'$\langle$E$_{\mathrm{kin}} \rangle$ (eV)',\
+#            'epot':r'$\langle$E$_{\mathrm{pot}} \rangle$ (eV)',\
+#            'etot':r'E$_{\mathrm{tot}}$ (eV)',\
+#            'x':r'simulation time (ps)'}
+#    _plot_xe_vs_time(filename,dat,label,_running_av,tstart=tstart)
+#
+#def _running_av(indat):
+#    y = np.cumsum(indat)/np.arange(1,indat.size+1)
+#    return(y)
+#
+#def _plot_xe_vs_time(filename,dat,label,yfunc,ekeys=['ekin','epot','etot'],tstart=1e3):
+#    _set_plotting_env(width=3.37,height=3.37,#/ golden_ratio *1.5/2,\
+#                   lrbt=[0.25,0.95,0.15,0.95],fsize=9.0)
+#    fig = plt.figure()
+#    n = 0; axes = []
+#    for e in ekeys:
+#        ax = fig.add_subplot(len(ekeys)*100+11+n)
+#        t = np.arange(tstart,dat[e].size)/1000.
+#        y = yfunc(dat[e][int(tstart):])
+#        ax.plot(t[::20],y[::20],color='k')
+#        ax.set_ylabel(label[e])
+#        axes.append(ax)
+#        n += 1
+#        # add line indicating AIMD traj restarts
+#        if 'trajlen' in dat:
+#            ttj = 0.0
+#            for tt in dat['trajlen']:
+#                ttj += tt
+#                ax.axvline(x=ttj/1000.,lw=0.5,ls=':',color='k')
+#    axes[-1].set_xlabel(label['x'])
+#    [axes[a].set_xticklabels([]) for a in range(len(axes)-1)]
+#    plt.subplots_adjust(hspace=0.0)
+#    writefig(filename)
+#   #matplotlibhelpers.write(filename,folder='output',\
+#   #    write_info = False,write_png=False,write_pdf=True,write_eps=False)
+#############################################################
+#############################################################
+#############################################################
     
 def _plot_running_av_overview(filename, Erav, surftag = {}, tstart=5000, ylim=(-3.0,2.0), fwidth=2*3.37, fheight=3.37/ golden_ratio,lrbt=[0.1,0.90,0.25,0.98],legloc=1,legbb=(1.55,1.0)):
     _set_plotting_env(width=fwidth,height=fheight,\
@@ -293,97 +271,107 @@ def __get_ads(f):
 #############################################################
 ##############################################################
 
-def _get_density(wpath,atypes=[],tstart=0):
-    if type(wpath) == str: # if wpath str read atoms otherwise assumed as atoms
-        traj = _read_restart_atoms(wpath)
-    else:
-        traj = wpath
-    #traj = read(infile,':')
-    water = identify_water(traj[0])
 
-   ## sanity check for OCCHO adsorbate: nO - nwater = 2
-   #if np.where(traj[0].get_atomic_numbers() == 8)[0].size - len(water) != 2:
-   #    raise Exception('identification of water molecules went wrong')
-    # sanity check all waters have 2 hydrogens
-    for w in water:
-        assert len(water[w]) == 2
+#############################################################
+################ Already included ###########################
+#############################################################
 
-    # indices of water and others
-    ind_Ow = list(water.keys())
-    ind_Hw = list(np.array(list(water.values())).flatten())
-    ind_o = [np.where(traj[0].get_atomic_numbers() == atype)[0] \
-                                            for atype in atypes]
-    inds = [ind_Ow,ind_Hw] + ind_o
-    
-    # cut traj here
-    traj = traj[int(tstart):]
-    # compute histogram
-    bins = np.linspace(0,traj[0].get_cell()[2,2],200) # hist by height
-    hists = [np.zeros(len(bins)-1) for i in range(len(inds))]
-    for snap in traj:
-        pos = snap.get_positions()
-        for i in range(0,len(inds)):
-            d = np.histogram(pos[inds[i],2],bins)
-            hists[i] += d[0]
-    for i in range(0,len(hists)): # normalize time
-        hists[i] /= len(traj) 
+#def _get_density(wpath,atypes=[],tstart=0):
+#    if type(wpath) == str: # if wpath str read atoms otherwise assumed as atoms
+#        traj = _read_restart_atoms(wpath)
+#    else:
+#        traj = wpath
+#    #traj = read(infile,':')
+#    water = identify_water(traj[0])
+#
+#   ## sanity check for OCCHO adsorbate: nO - nwater = 2
+#   #if np.where(traj[0].get_atomic_numbers() == 8)[0].size - len(water) != 2:
+#   #    raise Exception('identification of water molecules went wrong')
+#    # sanity check all waters have 2 hydrogens
+#    for w in water:
+#        assert len(water[w]) == 2
+#
+#    # indices of water and others
+#    ind_Ow = list(water.keys())
+#    ind_Hw = list(np.array(list(water.values())).flatten())
+#    ind_o = [np.where(traj[0].get_atomic_numbers() == atype)[0] \
+#                                            for atype in atypes]
+#    inds = [ind_Ow,ind_Hw] + ind_o
+#    
+#    # cut traj here
+#    traj = traj[int(tstart):]
+#    # compute histogram
+#    bins = np.linspace(0,traj[0].get_cell()[2,2],200) # hist by height
+#    hists = [np.zeros(len(bins)-1) for i in range(len(inds))]
+#    for snap in traj:
+#        pos = snap.get_positions()
+#        for i in range(0,len(inds)):
+#            d = np.histogram(pos[inds[i],2],bins)
+#            hists[i] += d[0]
+#    for i in range(0,len(hists)): # normalize time
+#        hists[i] /= len(traj) 
+#
+#    # convert histogram into density
+#    dA = traj[0].get_volume()/traj[0].cell[2,2]
+#    dh = bins[1] - bins[0]
+#    f_convert = 1.660538921e-24/(dA*dh*(1e-8)**3) #conversion mol/cm3
+#    for i in range(0,len(hists)):
+#        hists[i] *= f_convert
+#    
+#    # make dict for plotting
+#    dens_types = ['Ow','Hw']+[symbols[a] for a in atypes]
+#    hist_dicts = {dens_types[i]:hists[i] for i in range(len(dens_types))}
+#    
+#    # bin center
+#    binc = (bins[0:-1] + bins[1:])/2
+#
+#    return(binc,hist_dicts)
 
-    # convert histogram into density
-    dA = traj[0].get_volume()/traj[0].cell[2,2]
-    dh = bins[1] - bins[0]
-    f_convert = 1.660538921e-24/(dA*dh*(1e-8)**3) #conversion mol/cm3
-    for i in range(0,len(hists)):
-        hists[i] *= f_convert
-    
-    # make dict for plotting
-    dens_types = ['Ow','Hw']+[symbols[a] for a in atypes]
-    hist_dicts = {dens_types[i]:hists[i] for i in range(len(dens_types))}
-    
-    # bin center
-    binc = (bins[0:-1] + bins[1:])/2
+#def _plot_density(binc, hist_dicts, ax, dens=False):
+#    colors = {'Ow':'r','Hw':'c'}
+#    colors.update({el:jmol_colors[symbols.index(el)] \
+#            for el in hist_dicts if el not in colors})
+#    for el in hist_dicts:
+#        nz = np.where(hist_dicts[el] != 0.0)[0]
+#        if nz.size != 0:
+#            #ax.plot(binc[nz]-binc[nz][0],hist_dicts[el][nz],ls='-',color=colors[el],label=r'%s'%el)
+#            ax.plot(binc[nz]-binc[0],hist_dicts[el][nz],ls='-',color=colors[el],label=r'%s'%el)
+#    hlim = np.array(ax.get_xlim()); d = hlim[1]-hlim[0]; hlim[0] += 0.2*d; hlim[1] -= 0.2*d
+#    
+#    if dens:
+#        # water density
+#        ax2 = ax.twinx()
+#        ax2.hlines([1],*hlim,color='k',linestyle='--',linewidth=0.5)
+#        nz = np.where(hist_dicts['Ow'] != 0.0)[0]
+#        ax2.plot(binc[nz]-binc[nz][0],hist_dicts['Ow'][nz]*18,ls=':',color='k')
+#        ax.plot(np.nan, np.nan, ls=':', c='k', label=r'$\rho_{\mathrm{H_2O}}$')
+#    else:
+#        ax2 = None
+#        ax.hlines([1/18.],*hlim, color=colors['Ow'], linestyle='--', linewidth=0.5)
+#        ax.hlines([2/18.],*hlim, color=colors['Hw'], linestyle='--', linewidth=0.5)
+#    return(ax, ax2)
+#    
+#def plot_density(filename, binc, hist_dicts, dens=True):
+#    _set_plotting_env(width=3.37,height=3.37/ golden_ratio *1.5/2,\
+#                   lrbt=[0.18,0.88,0.25,0.95],fsize=9.0)
+#    fig = plt.figure()
+#    ax = fig.add_subplot(111)
+#    ax, ax2 = _plot_density(binc, hist_dicts, ax, dens)
+#    if ax2 != None:
+#        ax2.set_ylabel(r'density water (g/cm$^3$)')
+#    #
+#    ax.set_xlabel(r'z ($\mathrm{\AA}$)')
+#    ax.set_ylabel(r'density (mol/cm$^3$)')
+#    ax.legend(loc='best',prop={'size':7})
+#    ax.set_xlim(0.0,ax.get_xlim()[1])
+#    writefig(filename)
+#   #matplotlibhelpers.write(filename,folder='output',\
+#   #    write_info = False,write_png=False,write_pdf=True,write_eps=False)
 
-    return(binc,hist_dicts)
+#############################################################
+#############################################################
+#############################################################
 
-def _plot_density(binc, hist_dicts, ax, dens=False):
-    colors = {'Ow':'r','Hw':'c'}
-    colors.update({el:jmol_colors[symbols.index(el)] \
-            for el in hist_dicts if el not in colors})
-    for el in hist_dicts:
-        nz = np.where(hist_dicts[el] != 0.0)[0]
-        if nz.size != 0:
-            #ax.plot(binc[nz]-binc[nz][0],hist_dicts[el][nz],ls='-',color=colors[el],label=r'%s'%el)
-            ax.plot(binc[nz]-binc[0],hist_dicts[el][nz],ls='-',color=colors[el],label=r'%s'%el)
-    hlim = np.array(ax.get_xlim()); d = hlim[1]-hlim[0]; hlim[0] += 0.2*d; hlim[1] -= 0.2*d
-    
-    if dens:
-        # water density
-        ax2 = ax.twinx()
-        ax2.hlines([1],*hlim,color='k',linestyle='--',linewidth=0.5)
-        nz = np.where(hist_dicts['Ow'] != 0.0)[0]
-        ax2.plot(binc[nz]-binc[nz][0],hist_dicts['Ow'][nz]*18,ls=':',color='k')
-        ax.plot(np.nan, np.nan, ls=':', c='k', label=r'$\rho_{\mathrm{H_2O}}$')
-    else:
-        ax2 = None
-        ax.hlines([1/18.],*hlim, color=colors['Ow'], linestyle='--', linewidth=0.5)
-        ax.hlines([2/18.],*hlim, color=colors['Hw'], linestyle='--', linewidth=0.5)
-    return(ax, ax2)
-    
-def plot_density(filename, binc, hist_dicts, dens=True):
-    _set_plotting_env(width=3.37,height=3.37/ golden_ratio *1.5/2,\
-                   lrbt=[0.18,0.88,0.25,0.95],fsize=9.0)
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax, ax2 = _plot_density(binc, hist_dicts, ax, dens)
-    if ax2 != None:
-        ax2.set_ylabel(r'density water (g/cm$^3$)')
-    #
-    ax.set_xlabel(r'z ($\mathrm{\AA}$)')
-    ax.set_ylabel(r'density (mol/cm$^3$)')
-    ax.legend(loc='best',prop={'size':7})
-    ax.set_xlim(0.0,ax.get_xlim()[1])
-    writefig(filename)
-   #matplotlibhelpers.write(filename,folder='output',\
-   #    write_info = False,write_png=False,write_pdf=True,write_eps=False)
 
 def _sort_sub_runs(folders):
     bkeys = list(set(['_'.join(f.split('_')[:-1]) for f in folders]))

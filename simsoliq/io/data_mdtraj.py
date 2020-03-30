@@ -14,8 +14,6 @@ from simsoliq.io.utils import _nested_iterator, _level_iterator
 #       currently does not allow to pass option 'safe_traj_file' for example
 #       ghost option (always turned on)
 
-# TODO: move get_energy functions to MDtraj object
-
 class DataMDtraj(object):
     """ DataMDtraj object
       
@@ -52,11 +50,14 @@ class DataMDtraj(object):
         self.edat = {}
         self.mdtraj_atoms = []
         self.mdtrajlen = 0
+        self.timestep = 0
+        self.timeunit = "None"
         
         # functions for reading data, possibly better way
         # to handle this, like inheriting them (but may need to be situational)
         self.efunc = None
         self.afunc = None
+        self.tfunc = None
 
         # handling of file-iterators
         self.concmode = concmode
@@ -79,97 +80,20 @@ class DataMDtraj(object):
         return(outstr)
 
 
-    def get_traj_energies(self):
-        """
-          method to return all energy data for an MD trajectory
- 
-          Parameters
-          ----------
-          None
- 
-          Returns
-          -------
-          edat : dictionay
-              dictionary with entries `ekin`, `epot`, `etot`
-              each holding a 1d numpy array of the kinetic, potential, total
-              energy of each snapshot and with the length of the trajectory
-        """
-        self._retrieve_energy_data()
-        return(self.edat)
-
-
-    def get_kinetic_energies(self):
-        """
-          method to return kinetic energies for an MD trajectory
- 
-          Returns
-          -------
-          edat : 1d numpy array
-              array with kinetic energy with length of the trajectory
-        """
-        self._retrieve_energy_data()
-        return(self.edat['ekin'])
-
-
-    def get_potential_energies(self):
-        """
-          method to return potential energies for an MD trajectory
- 
-          Returns
-          -------
-          edat : 1d numpy array
-              array with potential energy with length of the trajectory
-        """
-        self._retrieve_energy_data()
-        return(self.edat['epot'])
-
-
-    def get_total_energies(self):
-        """
-          method to return total energies for an MD trajectory
- 
-          Returns
-          -------
-          edat : 1d numpy array
-              array with total energy with length of the trajectory
-        """
-        self._retrieve_energy_data()
-        return(self.edat['etot'])
-
-
     def _retrieve_energy_data(self):
         """ helper function to run io routines on energies,
             saves data internally in `edat` and `mdtrajlen`
         """
+        self._initialize_timestep()
         if len(self.edat) == 0:
             self.edat = self._iterator(self.efunc)
+            # add for output information
+            self.edat.update({'timestep':self.timestep, \
+                'timeunit':self.timeunit})
         if self.mdtrajlen == 0:
             self.mdtrajlen = self.edat['epot'].size
         else:
             assert self.mdtrajlen == self.edat['epot'].size
-    
-    
-    def get_traj_atoms(self, safe_asetraj_files=True):
-        """
-          method to return all structures of an MD trajectory 
-          as a list of ase-atoms objects
- 
-          Parameters
-          ----------
-          safe_asetraj_files : bool
-              option to save ase trajectory files of all 
-              output files (in their respective directory)
- 
-          Returns
-          -------
-          mdtraj_atoms : list
-              list of ase-atoms objects of each snapshot of the
-              md-trajectory with the length of the trajectory
-        
-        """
-        
-        self._retrieve_atom_data(safe_asetraj_files)
-        return(self.mdtraj_atoms)
 
 
     def _retrieve_atom_data(self, safe_asetraj_files=True):
@@ -184,8 +108,25 @@ class DataMDtraj(object):
         if self.mdtrajlen == 0:
             self.mdtrajlen = len(self.mdtraj_atoms)
         else:
-            print(self.mdtrajlen, len(self.mdtraj_atoms))
+            #print(self.mdtrajlen, len(self.mdtraj_atoms))
             assert self.mdtrajlen == len(self.mdtraj_atoms)
+
+
+    def _initialize_timestep(self):
+        """ helper function to obtain timestep of 
+            trajectory data (in fs)
+        """
+        if self.timestep == 0 and self.timeunit == "None":
+            timedat = self._iterator(self.tfunc)
+            
+            # each partial trajectory should have same timestep
+            timedat = {k:list(set(timedat[k])) for k in timedat}
+            
+            # assert uniform data
+            assert np.all([len(timedat[k]) == 1 for k in timedat])
+            
+            self.timestep = timedat['timestep'][0]
+            self.timeunit = timedat['timeunit'][0]
 
 
     def _iterator(self,efunc):
@@ -202,7 +143,6 @@ class DataMDtraj(object):
         elif self.concmode == 'level':
             return(_level_iterator(efunc,\
                 self.bpath, self.fident))
-            raise NotImplementedError('TODO:implement')
 
         else:
             raise NotImplementedError("unknown concmode")

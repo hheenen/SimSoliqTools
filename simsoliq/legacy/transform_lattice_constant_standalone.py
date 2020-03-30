@@ -11,50 +11,55 @@ from ase.atoms import Atoms
 from ase.constraints import FixAtoms
 
 ### Functions ###
-
-# from cathelpers.atom_manipulators import get_type_atoms
-def get_type_indices(atoms,atom_types):
-    ind_types = np.hstack([np.where(atoms.get_atomic_numbers() == t)[0]\
-                for t in atom_types])
-    return(ind_types)
-
-def get_type_atoms(atoms,atom_types):
-    ind_types = get_type_indices(atoms,atom_types)
-    return(get_inds_atoms(atoms,ind_types))
-
-def get_inds_atoms(atoms,ind_types):
-    return(Atoms(numbers=atoms.get_atomic_numbers()[ind_types],\
-                 positions=atoms.get_positions()[ind_types,:],\
-                 cell=atoms.get_cell()))
-
-def identify_water(atoms):
-    pos_ads = atoms.get_scaled_positions()
-    cell = atoms.get_cell()
-    ind_O = get_type_indices(atoms,[8])
-
-    # check neighbors in all types / could equally be only H-type
-    type_res = list(set((atoms.get_atomic_numbers())))
-    type_res.remove(8)
-    ind_rest = get_type_indices(atoms,type_res)
-    type_R = atoms.get_atomic_numbers()[ind_rest]
-    pos_R = pos_ads[ind_rest,:]
-    # TODO: may become problematic - typeR only H, slowly increase R and remove closest O-H distances
-    water_like = {}
-    for o in ind_O:
-        pos_O = pos_ads[o,:]
-        d_vec = np.linalg.norm(np.dot(_correct_vec(pos_R - pos_O),cell),axis=1)
-        ind_neigh = np.where(d_vec < 1.3)[0]
-        if sum(type_R[ind_neigh]) == 2: #ONLY H2O
-            water_like.update({o:ind_rest[ind_neigh]})
-    return(water_like)
+#############################################################
+################## NOTE: already worked in ##################
+##############################################################
+## from cathelpers.atom_manipulators import get_type_atoms
+#def get_type_indices(atoms,atom_types):
+#    ind_types = np.hstack([np.where(atoms.get_atomic_numbers() == t)[0]\
+#                for t in atom_types])
+#    return(ind_types)
+#
+#def get_type_atoms(atoms,atom_types):
+#    ind_types = get_type_indices(atoms,atom_types)
+#    return(get_inds_atoms(atoms,ind_types))
+#
+#def get_inds_atoms(atoms,ind_types):
+#    return(Atoms(numbers=atoms.get_atomic_numbers()[ind_types],\
+#                 positions=atoms.get_positions()[ind_types,:],\
+#                 cell=atoms.get_cell()))
+#
+#def identify_water(atoms):
+#    pos_ads = atoms.get_scaled_positions()
+#    cell = atoms.get_cell()
+#    ind_O = get_type_indices(atoms,[8])
+#
+#    # check neighbors in all types / could equally be only H-type
+#    type_res = list(set((atoms.get_atomic_numbers())))
+#    type_res.remove(8)
+#    ind_rest = get_type_indices(atoms,type_res)
+#    type_R = atoms.get_atomic_numbers()[ind_rest]
+#    pos_R = pos_ads[ind_rest,:]
+#    # TODO: may become problematic - typeR only H, slowly increase R and remove closest O-H distances
+#    water_like = {}
+#    for o in ind_O:
+#        pos_O = pos_ads[o,:]
+#        d_vec = np.linalg.norm(np.dot(_correct_vec(pos_R - pos_O),cell),axis=1)
+#        ind_neigh = np.where(d_vec < 1.3)[0]
+#        if sum(type_R[ind_neigh]) == 2: #ONLY H2O
+#            water_like.update({o:ind_rest[ind_neigh]})
+#    return(water_like)
     
-def _correct_vec(vec):
-    ''' correct vectors in fractional coordinates 
-        (assuming vectors minimal connection between 2 points)
-    '''
-    vec[np.where(vec >= 0.5)] -= 1.0
-    vec[np.where(vec < -0.5)] += 1.0
-    return(vec)
+#def _correct_vec(vec):
+#    ''' correct vectors in fractional coordinates 
+#        (assuming vectors minimal connection between 2 points)
+#    '''
+#    vec[np.where(vec >= 0.5)] -= 1.0
+#    vec[np.where(vec < -0.5)] += 1.0
+#    return(vec)
+#############################################################
+#############################################################
+##############################################################
 
 # dream script:
 

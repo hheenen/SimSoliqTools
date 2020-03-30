@@ -22,6 +22,7 @@ def read_mdtraj_vasp(fpath, fname, **kwargs):
     mdtraj = MDtraj(bpath=fpath, fident=fname, **kwargs)
     mdtraj.efunc = _read_energies_vasp
     mdtraj.afunc = _read_vasp_atoms
+    mdtraj.tfunc = _read_vasp_timedata
 
     return(mdtraj)
 
@@ -53,7 +54,7 @@ def _read_xml_energetics(filename):
     epot = np.array([float(s) for s in tstr[3::18]])
     ekin = np.array([float(s) for s in tstr[15::18]])
     etot = ekin+epot
-    return({'ekin':ekin,'epot':epot,'etot':etot})
+    return({'ekin':ekin,'epot':epot,'etot':etot,'runlengths':[etot.size]})
 
 
 def _read_OUTCAR_energetics(filename):
@@ -66,7 +67,7 @@ def _read_OUTCAR_energetics(filename):
     ekin = _get_val_OUTCAR(filename,'kinetic energy EKIN   =',4,5)
     epot = _get_val_OUTCAR(filename,'ion-electron   TOTEN  =',4,7)
     etot = ekin+epot
-    return({'ekin':ekin,'epot':epot,'etot':etot})
+    return({'ekin':ekin,'epot':epot,'etot':etot,'runlengths':[etot.size]})
 
 
 def _get_val_OUTCAR(filename,string,i,j):
@@ -117,4 +118,27 @@ def _read_vasp_atoms(wpath, fident, safe_asetraj_files=True):
     else:
         atoms = read(savedfile,':')
     return(atoms)
+    
+    
+def _read_vasp_timedata(wpath, fident):
+    """
+      function to read meta data for timestep used in trajectory
+ 
+      Parameters
+      ----------
+      wpath : str
+          name of path in which output file lies
+      fident : str
+          name / identifier of file to read
+ 
+      Returns
+      -------
+      timedat : dict
+          includes "timeunit" and "timestep"
+    
+    """
+    #TODO: needs proper implementation hard-coded    
+    timedat = {"timeunit":['fs'], "timestep":[1]}
+    return(timedat)
+
 

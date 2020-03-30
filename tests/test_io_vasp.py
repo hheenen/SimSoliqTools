@@ -17,7 +17,6 @@ def compare_arrays(earr0, earr1, prec=5):
 
 class TestIOVasp(unittest.TestCase):
 
-    ## add test cases,  get_atoms, nested, asterics
     def test_get_energies_vasprun(self):
         a = init_mdtraj("data/Pt111_24H2O_x/vasprun.xml", fmat='vasp', concmode=None)
         self._eval_engs(a)
@@ -50,8 +49,6 @@ class TestIOVasp(unittest.TestCase):
         self.assertTrue(compare_arrays(epot[:ntraj], a.get_potential_energies()))
         self.assertTrue(compare_arrays(etot[:ntraj], a.get_total_energies()))
         
-    #self.assertEqual(sum([1, 2, 3]), 6, "Should be 6")
-
     def test_get_positions(self):
         a = init_mdtraj("data/Pt111_24H2O_x/vasprun.xml", fmat='vasp', concmode='nested', fnest='restart')
         mdtraj = a.get_traj_atoms()
@@ -63,6 +60,13 @@ class TestIOVasp(unittest.TestCase):
         # compare positions snapshot 1
         pos0 = np.loadtxt('data/Pt111_24H2O_x/pos_snap1.txt')
         self.assertTrue(compare_arrays(pos0, mdtraj[1].get_positions(), prec=2))
+
+    def test_initialize_timestep(self):
+        a = init_mdtraj("data/Pt111_24H2O_x/vasprun.xml", fmat='vasp', concmode='nested', fnest='restart')
+        a._initialize_timestep()
+        
+        self.assertEqual(a.timeunit, 'fs')
+        self.assertEqual(a.timestep, 1)
 
 
 if __name__ == '__main__':
