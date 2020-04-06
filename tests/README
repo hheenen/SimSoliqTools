@@ -1,1 +1,3 @@
-execute all tests with "python -m unittest discover ."
+execute all tests with 
+"python -m unittest discover"
+"python -m unittest discover -v" for more info

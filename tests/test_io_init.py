@@ -6,7 +6,7 @@ from simsoliq.io import init_mdtraj
 class TestIOinit(unittest.TestCase):
     
     def test_filenotfound(self):
-        with self.assertRaises(FileNotFoundError):
+        with self.assertRaises(IOError):
             init_mdtraj("data/Pt111_24H2O_x/notthere.out")
 
     def test_wrongformat(self):

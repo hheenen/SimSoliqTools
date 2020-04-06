@@ -35,12 +35,12 @@ def init_mdtraj(filename, fmat='vasp', **kwargs):
     
     # check if file exists - ambiguous filename
     if fname.find('*') == -1 and not os.path.isfile(filename):
-        raise FileNotFoundError("%s does not exist"%filename)
+        raise IOError("%s does not exist"%filename)
 
     # case wildcard in output file
     if fname.find('*') != -1 and not os.path.isdir(fpath) and \
         np.any([f.find(fname.split('*')[0]) != -1 for f in listdir(fpath)]):
-        raise FileNotFoundError("%s does not exist"%filename)
+        raise IOError("%s does not exist"%filename)
     
     # check if file format known
     if fmat not in fmat_dict:
