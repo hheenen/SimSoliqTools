@@ -1,0 +1,29 @@
+System = CuH2O
+ISTART = 0  # begin from scratch
+PREC = Normal  # default precision settings
+ENCUT = 400
+GGA = RP  # RPBE
+IVDW = 11
+
+# NPAR = 4 # ask Zhenbin/ Henrik
+NCORE = 16
+KPAR = 1
+
+EDIFF = 1e-4
+LREAL = AUTO
+
+EDIFFG = 0  
+IBRION = -1  # (by default -1 when NSW = 0)
+NSW = 0 # maximum number of ionic steps
+
+
+ISMEAR = 0 ; SIGMA = 0.1
+NELM = 200
+
+LWAVE = .FALSE.     # wave function output to file
+LCHARG = .FALSE.    # charge density output to file
+LVHAR = .TRUE.      # output LOCPOT
+
+IDIPOL = 3
+LDIPOL = .TRUE.
+DIPOL = 0.5 0.5 0.5

@@ -267,15 +267,6 @@ def __get_ads(f):
 #        wpath += '/restart'
 #    return(atoms)
 
-#############################################################
-#############################################################
-##############################################################
-
-
-#############################################################
-################ Already included ###########################
-#############################################################
-
 #def _get_density(wpath,atypes=[],tstart=0):
 #    if type(wpath) == str: # if wpath str read atoms otherwise assumed as atoms
 #        traj = _read_restart_atoms(wpath)
@@ -792,16 +783,16 @@ def _plot_orientation_distribution(filename, dat, z0=0):
     ax.set_xlabel(r'angle vs. surface normal ($^\circ$)')
     writefig('water_orientation/'+filename)
 
-def writefig(filename, write_eps=False):
-    folder = 'output'
-    if not os.path.isdir(folder):
-        os.makedirs(folder)
-    fileloc = os.path.join(folder, filename)
-    print("writing {}".format(fileloc+'.pdf'))
-    plt.savefig(fileloc+'.pdf')
-    if write_eps:
-        print("writing {}".format(fileloc+'.eps'))
-        plt.savefig(fileloc+'.eps')
+#def writefig(filename, write_eps=False):
+#    folder = 'output'
+#    if not os.path.isdir(folder):
+#        os.makedirs(folder)
+#    fileloc = os.path.join(folder, filename)
+#    print("writing {}".format(fileloc+'.pdf'))
+#    plt.savefig(fileloc+'.pdf')
+#    if write_eps:
+#        print("writing {}".format(fileloc+'.eps'))
+#        plt.savefig(fileloc+'.eps')
 
 def get_run_aimd_wf(wpath):
     wf_data = read_sp_wf_data(wpath)
@@ -889,91 +880,6 @@ def get_vasp_iterative(wpath, func):
         wpath += '/restart'
     dat = _join_data_list(data)
     return(dat)
-    
-def read_sp_wf_data(wpath):
-    #a = read(wpath+'/atoms.traj') #one snapshot for volume
-    sppath = wpath+"/singlepoints_wf"
-    dat = {}; folders = []; warn = False
-    if os.path.isdir(sppath):
-        folders = [sppath+'/'+f for f in os.listdir(sppath) if f[:3] == 'sp_']
-    if os.path.isfile(sppath+"/wfs.pkl"):
-        dat = _load_pickle_file(sppath+"/wfs.pkl")
-
-    if len(folders) > 0 and len(folders) > len(dat.keys()):
-        print('post-processing wf data in %s'%(wpath))
-        for f in folders: # if no entry of folder in dat but output there
-            if float(f[-5:]) not in dat and \
-                (os.path.isfile(f+'/LOCPOT') or os.path.isfile(f+'/LOCPOT.gz')):
-                wf = get_vasp_wf(f)
-                dat.update({float(f[-5:]):wf})
-            else:
-                warn = True
-        _write_pickle_file(sppath+"/wfs.pkl", dat)
-    if warn:
-        print(80*'#'+'\n'+'Warning %s wf is incomplete'%wpath+'\n'+80*'#')
-    return(dat)
-
-def _unpack_files(wdir, files):
-    for f in files:
-        fn_packed = wdir+'/%s.gz'%f; fn_unpacked = wdir+'/%s'%f
-        if os.path.isfile(fn_packed):
-            with gzip.open(fn_packed, 'rb') as f_in, open(fn_unpacked, 'wb') as f_out:
-                f_out.writelines(f_in)
-            os.remove(fn_packed)
-
-def get_vasp_wf(f, **kwargs):
-    _unpack_files(f,['OUTCAR','LOCPOT']) #in case its packed
-
-    d0, a = _read_potential_vasp(f)
-    ind_vac = _determine_vacuum_reference(d0, a, **kwargs)[0]
-    
-    # fermi energy
-    ef = float(get_efermi(f+"/OUTCAR"))
-    
-    wf = d0[ind_vac] - ef
-    return(wf)
-
-def _read_potential_vasp(f):
-    a = read(f+'/OUTCAR')
-    # local potential
-    c=vasp.VaspChargeDensity(filename=f+'/LOCPOT')
-    c.read(filename=f+'/LOCPOT')
-    dens=c.chg[0]*a.get_volume() # ASE factors wronlgy via volume
-    d0=np.mean(np.mean(dens,axis=0),axis=0)
-    return(d0, a)
-
-def _determine_vacuum_reference(d0, a, viz=False, gtol=1e-3):
-    # gtol == tolerance for when potential is 'converged'/flat in V/AA
-    # vacuum region - first guess
-    z=np.linspace(0,a.cell[2,2],len(d0))
-    z_vac = find_max_empty_space(a,edir=3)
-    ind_vac = np.absolute(z - z_vac).argmin()
-
-    # double potential for simpler analysis at PBC
-    d02 = np.hstack((d0,d0))
-    # investigate at gradient
-    gd02 = np.absolute(np.gradient(d02))
-    iv2 = ind_vac+d0.size
-    # search max gradient as center of dipole correction withint 3 AA
-    diA = np.where(z > 1.0)[0][0]
-    imax = iv2-diA*2 + gd02[iv2-diA*2:iv2+diA*2].argmax()
-
-    # walk from imax to find minimum
-    # ibfe/iafr --> before/after dipole correction along z-axis
-    ibfe = np.where(gd02[imax-diA*3:imax] < gtol)[0] + imax-diA*3
-    iafr = np.where(gd02[imax:imax+diA*3] < gtol)[0] + imax
-
-    if ibfe.size == 0 or iafr.size == 0:
-        print('###\nproblematic WF gradient\n###')
-        ibfe = iafr = [ind_vac]
-        # TODO: fix problems with 211 --> seemingly max gradient cannot be reliable found
-        #raise Exception('problematic WF gradient')
-    ibfe = ibfe[-1]%d0.size; iafr = iafr[0]%d0.size
-    
-    if viz:
-        ###_plot_potential(z, d0, marks=[z[ind_vac], z[imax%d0.size]])
-        _plot_potential(z, d0, marks=[z[imax%d0.size], z[ibfe], z[iafr]])
-    return([ibfe, iafr])
         
 def _plot_potential(z, d0, marks=[]):
     _set_plotting_env(width=3.37,height=3.37/ golden_ratio *1.5,\
@@ -989,40 +895,133 @@ def _plot_potential(z, d0, marks=[]):
     ax.set_ylabel(r'$\Phi$ (eV)')
     ax.set_xlabel(r'z ($\mathrm{\AA}$)')
     writefig('potential')
-    
-def get_efermi(ofile):
-    with open(ofile,'r') as f:
-        lines = f.readlines()
-    ef = lines_key(lines,'E-fermi',0,2,rev=True,loobreak=True)
-    return(ef)
 
-def check_vasp_opt_converged(cdir):
-    _unpack_files(cdir,['OUTCAR','OSZICAR']) #in case its packed
-    with open(cdir+'/OUTCAR','r') as f:
-        olines = f.readlines()
-    with open(cdir+'/OSZICAR','r') as f:
-        zlines = f.readlines()
+#############################################################
+################## NOTE: already worked in ##################
+##############################################################
     
-    # finished OUTCAR-file ?
-    check = True and lines_key(olines,\
-        'General timing and accounting informations',0,1,rev=True,loobreak=True) == 'timing'
+#def read_sp_wf_data(wpath):
+#    #a = read(wpath+'/atoms.traj') #one snapshot for volume
+#    sppath = wpath+"/singlepoints_wf"
+#    dat = {}; folders = []; warn = False
+#    if os.path.isdir(sppath):
+#        folders = [sppath+'/'+f for f in os.listdir(sppath) if f[:3] == 'sp_']
+#    if os.path.isfile(sppath+"/wfs.pkl"):
+#        dat = _load_pickle_file(sppath+"/wfs.pkl")
+#
+#    if len(folders) > 0 and len(folders) > len(dat.keys()):
+#        print('post-processing wf data in %s'%(wpath))
+#        for f in folders: # if no entry of folder in dat but output there
+#            if float(f[-5:]) not in dat and \
+#                (os.path.isfile(f+'/LOCPOT') or os.path.isfile(f+'/LOCPOT.gz')):
+#                wf = get_vasp_wf(f)
+#                dat.update({float(f[-5:]):wf})
+#            else:
+#                warn = True
+#        _write_pickle_file(sppath+"/wfs.pkl", dat)
+#    if warn:
+#        print(80*'#'+'\n'+'Warning %s wf is incomplete'%wpath+'\n'+80*'#')
+#    return(dat)
+#
+#def _unpack_files(wdir, files):
+#    for f in files:
+#        fn_packed = wdir+'/%s.gz'%f; fn_unpacked = wdir+'/%s'%f
+#        if os.path.isfile(fn_packed):
+#            with gzip.open(fn_packed, 'rb') as f_in, open(fn_unpacked, 'wb') as f_out:
+#                f_out.writelines(f_in)
+#            os.remove(fn_packed)
+#
+#def get_vasp_wf(f, **kwargs):
+#    _unpack_files(f,['OUTCAR','LOCPOT']) #in case its packed
+#
+#    d0, a = _read_potential_vasp(f)
+#    ind_vac = _determine_vacuum_reference(d0, a, **kwargs)[0]
+#    
+#    # fermi energy
+#    ef = float(get_efermi(f+"/OUTCAR"))
+#    
+#    wf = d0[ind_vac] - ef
+#    return(wf)
+#
+#def _read_potential_vasp(f):
+#    a = read(f+'/OUTCAR')
+#    # local potential
+#    c=vasp.VaspChargeDensity(filename=f+'/LOCPOT')
+#    c.read(filename=f+'/LOCPOT')
+#    dens=c.chg[0]*a.get_volume() # ASE factors wronlgy via volume
+#    d0=np.mean(np.mean(dens,axis=0),axis=0)
+#    return(d0, a)
+#
+#def _determine_vacuum_reference(d0, a, viz=False, gtol=1e-3):
+#    # gtol == tolerance for when potential is 'converged'/flat in V/AA
+#    # vacuum region - first guess
+#    z=np.linspace(0,a.cell[2,2],len(d0))
+#    z_vac = find_max_empty_space(a,edir=3)
+#    ind_vac = np.absolute(z - z_vac).argmin()
+#
+#    # double potential for simpler analysis at PBC
+#    d02 = np.hstack((d0,d0))
+#    # investigate at gradient
+#    gd02 = np.absolute(np.gradient(d02))
+#    iv2 = ind_vac+d0.size
+#    # search max gradient as center of dipole correction withint 3 AA
+#    diA = np.where(z > 1.0)[0][0]
+#    imax = iv2-diA*2 + gd02[iv2-diA*2:iv2+diA*2].argmax()
+#
+#    # walk from imax to find minimum
+#    # ibfe/iafr --> before/after dipole correction along z-axis
+#    ibfe = np.where(gd02[imax-diA*3:imax] < gtol)[0] + imax-diA*3
+#    iafr = np.where(gd02[imax:imax+diA*3] < gtol)[0] + imax
+#
+#    if ibfe.size == 0 or iafr.size == 0:
+#        print('###\nproblematic WF gradient\n###')
+#        ibfe = iafr = [ind_vac]
+#        # TODO: fix problems with 211 --> seemingly max gradient cannot be reliable found
+#        #raise Exception('problematic WF gradient')
+#    ibfe = ibfe[-1]%d0.size; iafr = iafr[0]%d0.size
+#    
+#    if viz:
+#        ###_plot_potential(z, d0, marks=[z[ind_vac], z[imax%d0.size]])
+#        _plot_potential(z, d0, marks=[z[imax%d0.size], z[ibfe], z[iafr]])
+#    return([ibfe, iafr])
     
-    # last iteration didn't hit NELM ?
-    nscflast = int(lines_key(zlines,'DAV:',0,1,rev=True,loobreak=True))
-    nelm = 0
-    if lines_key(olines,'NELM   =',0,2,rev=False,loobreak=True) != False:
-        nelm = int(lines_key(olines,'NELM   =',0,2,rev=False,loobreak=True)[:-1])
-    check = check and nscflast < nelm
-    
-    # if geo-opt converged?
-    #fconv = float(lines_key(olines,'EDIFFG =',0,2,rev=False,loobreak=True))
-    fs = [float(line.split()[2]) for line in zlines if line.find('F=') != -1]
-    #alist = read(cdir+'/OUTCAR',':'); fs = [a.get_forces().max() for a in alist]
-    #check = check and (len(fs) > 1 and abs(fconv) > abs(fs[-1]-fs[-2]) or len(fs) == 1)
-    check = check and (lines_key(olines,\
-        "reached required accuracy - stopping structural energy minimisation",\
-        0,1,rev=True,loobreak=True) == 'required' or len(fs) == 1)
-    return(check)
+#def get_efermi(ofile):
+#    with open(ofile,'r') as f:
+#        lines = f.readlines()
+#    ef = lines_key(lines,'E-fermi',0,2,rev=True,loobreak=True)
+#    return(ef)
+
+#def check_vasp_opt_converged(cdir):
+#    _unpack_files(cdir,['OUTCAR','OSZICAR']) #in case its packed
+#    with open(cdir+'/OUTCAR','r') as f:
+#        olines = f.readlines()
+#    with open(cdir+'/OSZICAR','r') as f:
+#        zlines = f.readlines()
+#    
+#    # finished OUTCAR-file ?
+#    check = True and lines_key(olines,\
+#        'General timing and accounting informations',0,1,rev=True,loobreak=True) == 'timing'
+#    
+#    # last iteration didn't hit NELM ?
+#    nscflast = int(lines_key(zlines,'DAV:',0,1,rev=True,loobreak=True))
+#    nelm = 0
+#    if lines_key(olines,'NELM   =',0,2,rev=False,loobreak=True) != False:
+#        nelm = int(lines_key(olines,'NELM   =',0,2,rev=False,loobreak=True)[:-1])
+#    check = check and nscflast < nelm
+#    
+#    # if geo-opt converged?
+#    #fconv = float(lines_key(olines,'EDIFFG =',0,2,rev=False,loobreak=True))
+#    fs = [float(line.split()[2]) for line in zlines if line.find('F=') != -1]
+#    #alist = read(cdir+'/OUTCAR',':'); fs = [a.get_forces().max() for a in alist]
+#    #check = check and (len(fs) > 1 and abs(fconv) > abs(fs[-1]-fs[-2]) or len(fs) == 1)
+#    check = check and (lines_key(olines,\
+#        "reached required accuracy - stopping structural energy minimisation",\
+#        0,1,rev=True,loobreak=True) == 'required' or len(fs) == 1)
+#    return(check)
+
+#############################################################
+#############################################################
+##############################################################
         
 def plot_wf_vs_time(filename,wfdat,wfapprox=np.zeros([])):
     _set_plotting_env(width=3.37,height=3.37/ golden_ratio,\

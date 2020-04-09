@@ -130,3 +130,9 @@ dmypy.json
 
 # ASE trajectory files
 *.traj
+
+# pickle files in testing
+*.pkl
+
+# VIM swap files
+*.swp

@@ -1,4 +1,4 @@
-import os
+import os, gzip
 import numpy as np
 
 
@@ -63,5 +63,37 @@ def _stack_dicts(data):
         for key in dat:
             dat[key] = np.hstack((dat[key],data[i][key]))
     return(dat)
+
+
+def _unpack_files(wdir, files):
+    """
+      helper function to unpack zipped `files`
+    
+    """
+    for f in files:
+        fn_packed = wdir+'/%s.gz'%f; fn_unpacked = wdir+'/%s'%f
+        if os.path.isfile(fn_packed):
+            with gzip.open(fn_packed, 'rb') as f_in, open(fn_unpacked, 'wb') as f_out:
+                f_out.writelines(f_in)
+            os.remove(fn_packed)
+
+
+def lines_key(lines,key,nl,ns,delimiter=None,rev=False,loobreak=True):
+    """ function to iterate throught lines in order to find key-phrase
+        and return relative split
+    """
+    out = False
+    il = range(0,len(lines))
+    if rev:
+        il = il[::-1]
+    for i in il:
+        if lines[i].find(key) != -1:
+            if delimiter == None:
+                out = lines[i+nl].split(delimiter)[ns]
+            else:
+                out = lines[i+nl].split()[ns]
+            if loobreak:
+                break
+    return(out)
 
 

@@ -4,10 +4,11 @@ the mdtraj object
 
 """
 
-
+import os
 import numpy as np
 from ase.io import read, write
 from simsoliq.io.utils import _nested_iterator, _level_iterator
+from simsoliq.helper_functions import load_pickle_file, write_pickle_file
 
 
 # TODO: _iterator function can probably be made more elegant with a decorator
@@ -58,6 +59,11 @@ class DataMDtraj(object):
         self.efunc = None
         self.afunc = None
         self.tfunc = None
+        self.sp_prep = None
+        self.efunc_sp = None
+        self.fefunc_sp = None
+        self.vacefunc_sp = None
+        self.wffunc_sp = None
 
         # handling of file-iterators
         self.concmode = concmode
@@ -99,6 +105,8 @@ class DataMDtraj(object):
     def _retrieve_atom_data(self, safe_asetraj_files=True):
         """ helper function to run io routines on atomic positions
             saves data internally in `mdtraj_atoms` and `mdtrajlen`
+            only invoced if no self.mdtraj_atoms object present
+            read-out usually takes long
         """
         # NOTE safe_asetraj_files is a dead option, cannot be 
         #      passed down in current module structure
@@ -146,5 +154,117 @@ class DataMDtraj(object):
 
         else:
             raise NotImplementedError("unknown concmode")
+
+
+    def prepare_singlepoint_calculations(self, tag='', freq=500, **kwargs):
+        """
+          method to prepare single point calculations on snapshots of the 
+          trajectory. This can be usefull if data relying on heavy calculations
+          is needed and can only be extract sampling few snapshots
+ 
+          Parameters
+          ----------
+          tag : str
+              tag for the singlepoint calculation folder singlepoints_`tag`
+          freq : float
+              frequency of snapshots used to prepare a singlepoint calculation
+
+          NOTE: it may be useful to implement a decorator or smth similar for
+                atom-structure manipulation of each snapshot
+
+          Returns
+          -------
+          cpaths : list
+              list including all directories which were prepared
+        """
+        # prepare path for singlepoints
+        spname = 'singlepoints'
+        if len(tag) != 0:
+            spname = '_'.join([spname, tag])
+        sppath = self.bpath+'/'+ spname
+        if not os.path.isdir(sppath):
+            os.mkdir(sppath)
+
+        cpaths = []
+        # get atoms and prepare folders for freq
+        self._retrieve_atom_data()
+        for i in range(0,self.mdtrajlen,freq):
+            cdir = sppath+'/sp_step{0:05d}'.format(i)
+            if not os.path.isdir(cdir):
+                os.mkdir(cdir)
+            prep = self.sp_prep(cdir, self.bpath, self.mdtraj_atoms[i], **kwargs)
+            if prep:
+                cpaths.append(cdir.split('/')[-1])
+        return(cpaths)
+ 
+
+    def read_singlepoint_calculations(self, dkey, tag='', \
+        safe_pkl_files=True, **kwargs):
+        """
+          method to read single point calculations on snapshots of the 
+          trajectory. 
+ 
+          Parameters
+          ----------
+          tag : str
+              tag for the singlepoint calculation folder singlepoints_`tag`
+          dkey : str
+              key to determine function for data read-out
+
+          Returns
+          -------
+          sp_data : dict
+              dictionary containing sp data with {timestep:data}
+              dictionary is chosen as data could have any form
+        """
+        # get sp_path directory
+        sp_path = self._get_sp_path(tag=tag)
+
+        # find subfolders in `singlepoints`
+        sp_sub = [f for f in os.listdir(sp_path) \
+            if os.path.isdir(sp_path+'/'+f)]
+
+        # choose singlepoint data-retrieval function
+        fspdict = {'epot':self.efunc_sp, 'efermi':self.fefunc_sp, \
+            'evac':self.vacefunc_sp, 'wf':self.wffunc_sp}
+        if dkey in fspdict:
+            dfunc = fspdict[dkey]
+        else:
+            raise NotImplementedError("unknown dkey")
+
+        # find previously stored data
+        pklfile = sp_path+'/%ss.pkl'%dkey
+        sp_data = {}
+        if safe_pkl_files and os.path.isfile(pklfile):
+            sp_data = load_pickle_file(pklfile)
+        
+        # iterate singlepoint folders
+        for sub in sp_sub:
+            td = int(sub.split('_')[1][4:])
+            if td not in sp_data:
+                dat = dfunc(sp_path+'/'+sub, **kwargs)
+                sp_data.update({td:dat})
+        write_pickle_file(pklfile, sp_data)
+        return(sp_data)
+
+
+    def _get_sp_path(self,tag=''):
+        """ 
+          helper function to find and retrieve singleploints directory
+        
+        """
+        # find "singlepoints" folders
+        sp_base = [f for f in os.listdir(self.bpath) \
+            if f[:12] == 'singlepoints' and os.path.isdir(self.bpath+'/'+f)]
+        if len(sp_base) == 0:
+            raise IOError("no `singlepoints` folder found")
+        # if missing tag look for uniquely identifyable singlepoint folder
+        if len(tag) == 0:
+            if len(sp_base) == 1:
+                tag = sp_base[0].split('_')[1]
+            else:
+                raise IOError("please provide tag argument")
+        sp_path = self.bpath+'/'+'singlepoints_%s'%tag
+        return(sp_path)
 
 

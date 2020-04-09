@@ -126,54 +126,62 @@ def prep_sp_no_solvent(wpath):
             rdirs.append(cdir.split('/')[-1])
     _write_chain_submit_file(sppath, rdirs, nbatch=100)
 
-def prep_sp_wf(sppath):
-    print('in %s'%sppath)
-    templ_path = '/home/cat/heenen/Workspace/benchmarking_calcs/Cu_AIMD_runs/template_files_VASP'
-    if not os.path.isdir(sppath):
-        os.mkdir(sppath)
-    wpath = '/'.join(sppath.split('/')[:-1])
-    traj = _read_restart_atoms(wpath)
-    #ind_sp = range(0,len(traj),1000) # every 0.5 ps
-    ind_sp = range(0,len(traj),500) # every 0.5 ps
-    cdirs = []; rdirs = []
-    for i in ind_sp:
-        cdir = sppath+'/sp_step{0:05d}'.format(i)
-        if not os.path.isdir(cdir):
-            os.mkdir(cdir)
-        if (not os.path.isfile(cdir+"/OUTCAR") and not os.path.isfile(cdir+"/OUTCAR.gz")) or \
-            not check_vasp_opt_converged(cdir):
-            write(cdir+"/POSCAR",traj[i])
-            copyfile(wpath+"/POTCAR",cdir+"/POTCAR")
-            copyfile(wpath+"/KPOINTS",cdir+"/KPOINTS")
-            copyfile(templ_path+"/INCAR_WFsp_benchmark",cdir+"/INCAR")
-            copyfile(templ_path+"/submit_vasp_WFsp.slurm",cdir+"/submit_vasp_WFsp.slurm")
-            cdirs.append(cdir)
-            rdirs.append(cdir.split('/')[-1])
-    _write_chain_submit_file(sppath, rdirs, nbatch=100, submit_f_name='submit_vasp_WFsp_chain')
-    #submit_jobs_slurm(cdirs, f_submit='submit_vasp_WFsp.slurm')
 
-def _write_chain_submit_file(wpath, cdirs, nbatch, \
-                                        submit_f_name='submit_vasp_sp_chain'):
-    # file header
-    hdr = "#!/bin/bash\n#SBATCH -J job\n#SBATCH -p xeon16\n"
-    hdr += "#SBATCH -N 1\n#SBATCH --ntasks-per-node=16\n"
-    hdr += "#SBATCH -t 20:00:00\n#SBATCH -o slurm.%j.out\n" #8 hrs roughly for 100
-    hdr += "#SBATCH -e err\n\nmodule purge\nmodule load intel\n"
-    hdr += "export PATH=/home/cat/zwang/bin/cattheory/vasp/5.4.4:$PATH\n\n"
-    hdr += "cwd=$(pwd)\n\n"
+#############################################################
+################## NOTE: already worked in ##################
+##############################################################
 
-    mdl = "\ncd %s\nmpirun vasp_std\ncd $cwd\n\n"
+#def prep_sp_wf(sppath):
+#    print('in %s'%sppath)
+#    templ_path = '/home/cat/heenen/Workspace/benchmarking_calcs/Cu_AIMD_runs/template_files_VASP'
+#    if not os.path.isdir(sppath):
+#        os.mkdir(sppath)
+#    wpath = '/'.join(sppath.split('/')[:-1])
+#    traj = _read_restart_atoms(wpath)
+#    #ind_sp = range(0,len(traj),1000) # every 0.5 ps
+#    ind_sp = range(0,len(traj),500) # every 0.5 ps
+#    cdirs = []; rdirs = []
+#    for i in ind_sp:
+#        cdir = sppath+'/sp_step{0:05d}'.format(i)
+#        if not os.path.isdir(cdir):
+#            os.mkdir(cdir)
+#        if (not os.path.isfile(cdir+"/OUTCAR") and not os.path.isfile(cdir+"/OUTCAR.gz")) or \
+#            not check_vasp_opt_converged(cdir):
+#            write(cdir+"/POSCAR",traj[i])
+#            copyfile(wpath+"/POTCAR",cdir+"/POTCAR")
+#            copyfile(wpath+"/KPOINTS",cdir+"/KPOINTS")
+#            copyfile(templ_path+"/INCAR_WFsp_benchmark",cdir+"/INCAR")
+#            copyfile(templ_path+"/submit_vasp_WFsp.slurm",cdir+"/submit_vasp_WFsp.slurm")
+#            cdirs.append(cdir)
+#            rdirs.append(cdir.split('/')[-1])
+#    _write_chain_submit_file(sppath, rdirs, nbatch=100, submit_f_name='submit_vasp_WFsp_chain')
+#    #submit_jobs_slurm(cdirs, f_submit='submit_vasp_WFsp.slurm')
 
-    # make nbatch - job files
-    nb = list(range(0,len(cdirs),nbatch)) + [len(cdirs)]
-    for i in range(len(nb) - 1):
-        indirs = cdirs[nb[i]:nb[i+1]]
-        ftxt = hdr
-        for indir in indirs:
-            ftxt += mdl%indir
-        with open(wpath+'/{0}_{1:02d}.slurm'.format(submit_f_name,i),'w') as sf:
-            sf.write(ftxt)
+#def _write_chain_submit_file(wpath, cdirs, nbatch, \
+#                                        submit_f_name='submit_vasp_sp_chain'):
+#    # file header
+#    hdr = "#!/bin/bash\n#SBATCH -J job\n#SBATCH -p xeon16\n"
+#    hdr += "#SBATCH -N 1\n#SBATCH --ntasks-per-node=16\n"
+#    hdr += "#SBATCH -t 20:00:00\n#SBATCH -o slurm.%j.out\n" #8 hrs roughly for 100
+#    hdr += "#SBATCH -e err\n\nmodule purge\nmodule load intel\n"
+#    hdr += "export PATH=/home/cat/zwang/bin/cattheory/vasp/5.4.4:$PATH\n\n"
+#    hdr += "cwd=$(pwd)\n\n"
+#
+#    mdl = "\ncd %s\nmpirun vasp_std\ncd $cwd\n\n"
+#
+#    # make nbatch - job files
+#    nb = list(range(0,len(cdirs),nbatch)) + [len(cdirs)]
+#    for i in range(len(nb) - 1):
+#        indirs = cdirs[nb[i]:nb[i+1]]
+#        ftxt = hdr
+#        for indir in indirs:
+#            ftxt += mdl%indir
+#        with open(wpath+'/{0}_{1:02d}.slurm'.format(submit_f_name,i),'w') as sf:
+#            sf.write(ftxt)
 
+#############################################################
+#############################################################
+##############################################################
 
 if __name__ == "__main__":
     
