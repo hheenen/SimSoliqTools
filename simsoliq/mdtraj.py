@@ -6,12 +6,15 @@ This module contains the MDtraj object for data manipulation
 import os
 import numpy as np
 from ase.data import chemical_symbols as symbols
+from ase.symbols import Symbols
 
 from simsoliq.io.data_mdtraj import DataMDtraj
 from simsoliq.ase_atoms_utils import get_type_indices, get_type_atoms, \
                                      get_inds_atoms
 from simsoliq.geometry_utils import _correct_vec
 from simsoliq.helper_functions import load_pickle_file, write_pickle_file
+
+# NOTE for documentation needs to be reported that some functions rely on fixed setup --> interface normal to z-coordinate and metal on lowest
 
 class MDtraj(DataMDtraj):
     """ MDtraj object
@@ -46,6 +49,17 @@ class MDtraj(DataMDtraj):
             concmode=concmode, fnest=fnest, \
             safe_asetraj_files=safe_asetraj_files)
         # other options to follow ...
+
+
+    def __repr__(self):
+        """ 
+          basic information for object when printed
+        """
+        self._retrieve_energy_data()
+        outstr = 70*'#' + "\nmdtraj object with %i snapshots\n"%self.mdtrajlen
+        outstr += "of composition %s\n"%self.get_traj_composition()
+        outstr += "data is located in %s\n"%self.bpath + 70*'#'
+        return(outstr)
 
 
     def get_traj_energies(self):
@@ -200,18 +214,19 @@ class MDtraj(DataMDtraj):
         traj = traj[int(tstart):]
 
         # compute histogram
-        bins = np.linspace(0,traj[0].get_cell()[2,2],200) # hist by height
+        ha = height_axis
+        bins = np.linspace(0,traj[0].get_cell()[ha,ha],200) # hist by height
         hists = [np.zeros(len(bins)-1) for i in range(len(inds))]
         for snap in traj:
             pos = snap.get_positions()
             for i in range(0,len(inds)):
-                d = np.histogram(pos[inds[i],2],bins)
+                d = np.histogram(pos[inds[i],ha],bins)
                 hists[i] += d[0]
         for i in range(0,len(hists)): # normalize time
             hists[i] /= len(traj) 
  
         # convert histogram into density
-        dA = traj[0].get_volume()/traj[0].cell[2,2]
+        dA = traj[0].get_volume()/traj[0].cell[ha,ha]
         dh = bins[1] - bins[0]
         f_convert = 1.660538921e-24/(dA*dh*(1e-8)**3) #conversion mol/cm3
         for i in range(0,len(hists)):
@@ -276,4 +291,68 @@ class MDtraj(DataMDtraj):
             if sum(type_R[ind_neigh]) == smol[1]:
                 solv.update({o:ind_rest[ind_neigh]})
         return(solv)
-    
+
+
+    def get_traj_composition(self):
+        """
+          method to return a string of the atomic composition of the trajectory
+        
+        """
+        # get atomic data
+        traj0 = self.get_first_snapshot()
+        atno = traj0.get_atomic_numbers()
+        
+        # get solvent indices
+        solv = self._get_solvent_indices(snapshot=0)
+        assert np.all([len(solv[k])==2 for k in solv])
+        ind_solv = list(solv.keys()) + list(np.array(list(solv.values())).flatten())
+
+        # get substrate indices
+        type_subs = self.get_substrate_types()
+        ind_subs = [i for i in range(len(traj0)) if atno[i] in type_subs \
+            and i not in ind_solv]
+            
+        # get other inds assumed as adsorbate
+        ind_ads = [i for i in range(len(traj0)) if i not in ind_subs+ind_solv]
+
+        # prep composition string
+        sym = Symbols([atno[i] for i in ind_subs])
+        str_subs = sym.get_chemical_formula()
+        sym = Symbols([atno[i] for i in ind_ads])
+        str_ads = sym.get_chemical_formula()
+        str_solv = "%iH2O"%len(solv) #hardcoded to water right now
+
+        str_comp = "_".join([k for k in [str_subs, str_solv, str_ads]\
+            if len(k) > 0])
+        return(str_comp)
+
+
+    def get_substrate_types(self):
+        """
+          method to return the (assumed) types of the substrate
+ 
+          Parameters
+          ----------
+          None
+ 
+          Returns
+          -------
+          type_subs : list
+              list including elemental numbers of substrate
+        
+        """
+        # NOTE: get substrate indices: is assumed to be fixed or 
+        #       lowest z-coordinate
+        traj0 = self.get_first_snapshot()
+        atno = traj0.get_atomic_numbers()
+        
+        if len(traj0.constraints) > 0:
+            ind_cnst = traj0.constraints[0].index
+            type_subs = np.unique(atno[ind_cnst])
+        else: # not tested
+            pos = traj0.get_positions(); ind_zmin = pos[:,2].argmin()
+            type_subs = [atno[ind_zmin]]
+        
+        return(type_subs)
+
+

@@ -157,72 +157,65 @@ from cathelpers.misc import lines_key, _load_pickle_file, _write_pickle_file
 #    writefig(filename)
 #   #matplotlibhelpers.write(filename,folder='output',\
 #   #    write_info = False,write_png=False,write_pdf=True,write_eps=False)
-#############################################################
-#############################################################
-#############################################################
     
-def _plot_running_av_overview(filename, Erav, surftag = {}, tstart=5000, ylim=(-3.0,2.0), fwidth=2*3.37, fheight=3.37/ golden_ratio,lrbt=[0.1,0.90,0.25,0.98],legloc=1,legbb=(1.55,1.0)):
-    _set_plotting_env(width=fwidth,height=fheight,\
-                   lrbt=lrbt,fsize=9.0)
-
-    csurf = {'Cu211':tumcs['tumred'], 'Cu111':tumcs['tumorange'],\
-        'Au111':tumcs['acc_yellow'], 'Pt111':tumcs['darkgray']}
-    clr = {'clean':'k', 'OH':tumcs['diag_red'], 'CO':tumcs['tumgreen'], \
-        'CHO':tumcs['tumblue'], 'COH':tumcs['tumlightblue'], 'OCCHO':tumcs['diag_violet'],
-        'OOH':tumcs['tumorange']}
-    if len(surftag) == 0:
-        surftag = {'Cu111': 'Cu(111)', 'Cu211':'Cu(211)', 'Au111':'Au(111)', 'Pt111':'Pt(111)'}
-
-    fig = plt.figure()
-    surfs = ['Cu211', 'Cu111', 'Au111', 'Pt111']; c = 0; axes = []
-    surfs = [s for s in surfs if np.any([k.find(s) != -1 for k in Erav])]
-    
-    for surf in surfs:
-        sf = [f for f in Erav if f.split('_')[0][:5] == surf]
-        ax = fig.add_subplot(101+10*len(surfs)+c)
-        ax.annotate(r'%s'%surftag[surf], xy=(0.15,0.65), xycoords='axes fraction',size=9, color=csurf[surf])
-        refkey = [rk for rk in sf if len(rk.split('_')) == 2][0]
-        ref = np.mean([e[-1] for e in Erav[refkey]])
-        for f in sf:
-            ads = __get_ads(f)
-          #### hard-coded artefact dashed lines
-          ##if ads == 'OOH' and surf == 'Pt111':
-          ##    ind2 = int(200-tstart/100); ind3 = int(100-tstart/100)
-          ##    ax.plot(np.arange(tstart/100.,tstart/100.+Erav[f][2].size)[ind2:]*0.1, Erav[f][2][ind2:]-ref, ls='--', color=clr[ads])
-          ##    ax.plot(np.arange(tstart/100.,tstart/100.+Erav[f][3].size)[ind3:]*0.1, Erav[f][3][ind3:]-ref, ls='--', color=clr[ads])
-          ##    Erav[f][2] = Erav[f][2][:ind2]; Erav[f][3] = Erav[f][3][:ind3]
-          #### hard-coded artefact dashed lines
-            for d in Erav[f]:
-                t = np.arange(tstart/100.,tstart/100.+d.size)*0.1
-                ax.plot(t, d-ref, ls='-', color=clr[ads])
-        axes.append(ax)
-        c += 1
-
-    # legend
-    dads = [__get_ads(f) for f in Erav]
-    [axes[-1].plot(np.nan, np.nan, ls='-', color=clr[ads], label=r'%s'%ads) for ads in clr if ads in dads]
-    axes[-1].legend(loc=legloc,prop={'size':7},framealpha=1.0,facecolor='w', bbox_to_anchor=legbb)
-
-    axes[0].set_ylabel(r'$\langle \Delta E \mathrm{_{ad}^{total}} \rangle (t)$ (eV)')
-    mdl = int((len(surfs)/2)-1)
-    axes[mdl].set_xlabel(r'time (ps)')
-    if len(axes)%2 == 0:
-        axes[mdl].xaxis.set_label_coords(1.0, -0.18*((3.37/golden_ratio)/fheight))
-    [ax.set_ylim(ylim) for ax in axes]
-    [axes[a].set_yticklabels([]) for a in range(1,len(axes))]
-    plt.subplots_adjust(wspace=0.05)
-
-    writefig(filename)
-            
-def __get_ads(f):
-    if len(f.split('_')) == 2:
-        return('clean')
-    else:
-        return(f.split('_')[2])
-
-#############################################################
-################## NOTE: already worked in ##################
-##############################################################
+#def _plot_running_av_overview(filename, Erav, surftag = {}, tstart=5000, ylim=(-3.0,2.0), fwidth=2*3.37, fheight=3.37/ golden_ratio,lrbt=[0.1,0.90,0.25,0.98],legloc=1,legbb=(1.55,1.0)):
+#    _set_plotting_env(width=fwidth,height=fheight,\
+#                   lrbt=lrbt,fsize=9.0)
+#
+#    csurf = {'Cu211':tumcs['tumred'], 'Cu111':tumcs['tumorange'],\
+#        'Au111':tumcs['acc_yellow'], 'Pt111':tumcs['darkgray']}
+#    clr = {'clean':'k', 'OH':tumcs['diag_red'], 'CO':tumcs['tumgreen'], \
+#        'CHO':tumcs['tumblue'], 'COH':tumcs['tumlightblue'], 'OCCHO':tumcs['diag_violet'],
+#        'OOH':tumcs['tumorange']}
+#    if len(surftag) == 0:
+#        surftag = {'Cu111': 'Cu(111)', 'Cu211':'Cu(211)', 'Au111':'Au(111)', 'Pt111':'Pt(111)'}
+#
+#    fig = plt.figure()
+#    surfs = ['Cu211', 'Cu111', 'Au111', 'Pt111']; c = 0; axes = []
+#    surfs = [s for s in surfs if np.any([k.find(s) != -1 for k in Erav])]
+#    
+#    for surf in surfs:
+#        sf = [f for f in Erav if f.split('_')[0][:5] == surf]
+#        ax = fig.add_subplot(101+10*len(surfs)+c)
+#        ax.annotate(r'%s'%surftag[surf], xy=(0.15,0.65), xycoords='axes fraction',size=9, color=csurf[surf])
+#        refkey = [rk for rk in sf if len(rk.split('_')) == 2][0]
+#        ref = np.mean([e[-1] for e in Erav[refkey]])
+#        for f in sf:
+#            ads = __get_ads(f)
+#          #### hard-coded artefact dashed lines
+#          ##if ads == 'OOH' and surf == 'Pt111':
+#          ##    ind2 = int(200-tstart/100); ind3 = int(100-tstart/100)
+#          ##    ax.plot(np.arange(tstart/100.,tstart/100.+Erav[f][2].size)[ind2:]*0.1, Erav[f][2][ind2:]-ref, ls='--', color=clr[ads])
+#          ##    ax.plot(np.arange(tstart/100.,tstart/100.+Erav[f][3].size)[ind3:]*0.1, Erav[f][3][ind3:]-ref, ls='--', color=clr[ads])
+#          ##    Erav[f][2] = Erav[f][2][:ind2]; Erav[f][3] = Erav[f][3][:ind3]
+#          #### hard-coded artefact dashed lines
+#            for d in Erav[f]:
+#                t = np.arange(tstart/100.,tstart/100.+d.size)*0.1
+#                ax.plot(t, d-ref, ls='-', color=clr[ads])
+#        axes.append(ax)
+#        c += 1
+#
+#    # legend
+#    dads = [__get_ads(f) for f in Erav]
+#    [axes[-1].plot(np.nan, np.nan, ls='-', color=clr[ads], label=r'%s'%ads) for ads in clr if ads in dads]
+#    axes[-1].legend(loc=legloc,prop={'size':7},framealpha=1.0,facecolor='w', bbox_to_anchor=legbb)
+#
+#    axes[0].set_ylabel(r'$\langle \Delta E \mathrm{_{ad}^{total}} \rangle (t)$ (eV)')
+#    mdl = int((len(surfs)/2)-1)
+#    axes[mdl].set_xlabel(r'time (ps)')
+#    if len(axes)%2 == 0:
+#        axes[mdl].xaxis.set_label_coords(1.0, -0.18*((3.37/golden_ratio)/fheight))
+#    [ax.set_ylim(ylim) for ax in axes]
+#    [axes[a].set_yticklabels([]) for a in range(1,len(axes))]
+#    plt.subplots_adjust(wspace=0.05)
+#
+#    writefig(filename)
+#            
+#def __get_ads(f):
+#    if len(f.split('_')) == 2:
+#        return('clean')
+#    else:
+#        return(f.split('_')[2])
 
 #def _prep_POSCAR_atoms(wpath):
 #    if not os.path.isfile(wpath+"/atoms.traj") or \
@@ -364,38 +357,38 @@ def __get_ads(f):
 #############################################################
 
 
-def _sort_sub_runs(folders):
-    bkeys = list(set(['_'.join(f.split('_')[:-1]) for f in folders]))
-    fdict = {bk:[k for k in folders if '_'.join(k.split('_')[:-1]) == bk] \
-                                                        for bk in bkeys}
-    return(fdict)
-
-def _adjust_density_to_metal(binc, hist_dicts, metal):
-    # find where metal is in density profile
-    indm = np.where(hist_dicts[metal] != 0.0)[0]
-    binc = binc[indm[-1]+1:]
-    for k in hist_dicts:
-        hist_dicts[k] = hist_dicts[k][indm[-1]+1:]
-    return(binc, hist_dicts)
-
-def _av_dens(folders):
-    sdens = {}
-    for sub in folders:
-        denspkl = '%s/density_dat.pkl'%sub
-        dens = _load_pickle_file(denspkl)
-        dens['binc'], dens['hist_dicts'] = _adjust_density_to_metal(\
-            dens['binc'], dens['hist_dicts'], sub[:2])
-        # sum-up values
-        hist_dicts = dens['hist_dicts']; hist_dicts.update({'binc':dens['binc']})
-        for k in hist_dicts.keys():
-            if k not in sdens:
-                sdens.update({k:np.zeros(hist_dicts[k].shape)})
-               # first profile determines shape (little data lost - if at all)
-            lk = min(sdens[k].size, hist_dicts[k].size)
-            sdens[k][:lk] += hist_dicts[k][:lk]
-    for k in sdens:
-        sdens[k] /= len(folders)
-    return(sdens)
+#def _sort_sub_runs(folders):
+#    bkeys = list(set(['_'.join(f.split('_')[:-1]) for f in folders]))
+#    fdict = {bk:[k for k in folders if '_'.join(k.split('_')[:-1]) == bk] \
+#                                                        for bk in bkeys}
+#    return(fdict)
+#
+#def _adjust_density_to_metal(binc, hist_dicts, metal):
+#    # find where metal is in density profile
+#    indm = np.where(hist_dicts[metal] != 0.0)[0]
+#    binc = binc[indm[-1]+1:]
+#    for k in hist_dicts:
+#        hist_dicts[k] = hist_dicts[k][indm[-1]+1:]
+#    return(binc, hist_dicts)
+#
+#def _av_dens(folders):
+#    sdens = {}
+#    for sub in folders:
+#        denspkl = '%s/density_dat.pkl'%sub
+#        dens = _load_pickle_file(denspkl)
+#        dens['binc'], dens['hist_dicts'] = _adjust_density_to_metal(\
+#            dens['binc'], dens['hist_dicts'], sub[:2])
+#        # sum-up values
+#        hist_dicts = dens['hist_dicts']; hist_dicts.update({'binc':dens['binc']})
+#        for k in hist_dicts.keys():
+#            if k not in sdens:
+#                sdens.update({k:np.zeros(hist_dicts[k].shape)})
+#               # first profile determines shape (little data lost - if at all)
+#            lk = min(sdens[k].size, hist_dicts[k].size)
+#            sdens[k][:lk] += hist_dicts[k][:lk]
+#    for k in sdens:
+#        sdens[k] /= len(folders)
+#    return(sdens)
 
 def _analyze_density(indens):
     sdens = deepcopy(indens)

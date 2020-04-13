@@ -2,6 +2,7 @@ import unittest
 
 import numpy as np
 from simsoliq.io import init_mdtraj
+from simsoliq.mdtraj_average import average_densities
 
 
 class TestDensity(unittest.TestCase):
@@ -30,3 +31,17 @@ class TestDensity(unittest.TestCase):
         binc, hist_dicts = densdata['binc'], densdata['hists']
         for key in hist_dicts:
             self.assertEqual(np.where(hist_dicts[key] != 0.0)[0].size, out_compare[key])
+
+    def test_average_density(self):
+        trj1 = init_mdtraj("data/Pt111_24H2O_x/vasprun.xml", fmat='vasp')
+        trj2 = init_mdtraj("data/Pt111_24H2O_x/restart/vasprun.xml", fmat='vasp')
+        av_dens = average_densities([trj1, trj2], tstart=0)
+
+        # compare number of `populated bins`
+        out_compare = {'Osolv':23, 'Hsolv':37, 'Pt':0}
+        hists = av_dens['Pt36_24H2O']['hists']
+        for key in hists:
+            self.assertEqual(np.where(hists[key] != 0.0)[0].size, out_compare[key])
+
+
+

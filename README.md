@@ -16,6 +16,14 @@ scripts
 - routines for analysis of the water structure in MD trajectories
 - routines to track adsorbates on the surface during the AIMD simulations
 
+### First implementation avalability
+
+- i/o routines structures and energies
+- write routines for singlepoint calcs (TODO: add atom-manipulation)
+- read routines for singlepoint calcs (energies, fermi-, vacuum-potential and workfunction)
+- post-processing energies with averaging + standard plots
+- post-processing density, individual trajectories + trajectory averaging + standard plots
+
 ### Installation
 
 Clone the repo to your preferred location

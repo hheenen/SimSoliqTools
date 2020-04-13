@@ -14,6 +14,8 @@ from simsoliq.helper_functions import load_pickle_file, write_pickle_file
 # TODO: _iterator function can probably be made more elegant with a decorator
 #       currently does not allow to pass option 'safe_traj_file' for example
 #       ghost option (always turned on)
+# TODO: move safe_traj_file to this level/iterator level of the code!!!
+#       cleaner and better to handle
 
 class DataMDtraj(object):
     """ DataMDtraj object
@@ -75,15 +77,6 @@ class DataMDtraj(object):
 
         if fident.find('*') != -1:
             self.concmode = 'level'
-
-
-    def __repr__(self):
-        """ basic information for object when printed
-        """
-        self._retrieve_energy_data()
-        outstr = 70*'#' + "\nmdtraj object with %i snapshots\n"%self.mdtrajlen
-        outstr += "data is located in %s\n"%self.bpath + 70*'#'
-        return(outstr)
 
 
     def _retrieve_energy_data(self):
@@ -266,5 +259,32 @@ class DataMDtraj(object):
                 raise IOError("please provide tag argument")
         sp_path = self.bpath+'/'+'singlepoints_%s'%tag
         return(sp_path)
+
+
+    def get_first_snapshot(self):
+        """
+          method to return the first snapshot of a trajectory;
+          this method circumvents reading the whole trajectory and is
+          therefore considerably faster if the time evolution is not needed
+ 
+          Parameters
+          ----------
+          None
+
+          Returns
+          -------
+          traj0 : ase-atoms object
+            first snapshot of trajectory
+
+        """
+        fatoms = [f for f in os.listdir(self.bpath) \
+            if f[:12] == 'mdtraj_atoms']
+        fatoms.sort()
+        if len(fatoms) > 0:
+            return(read(self.bpath+'/'+fatoms[0],0))
+        else:
+            self._retrieve_atom_data()
+            return(self.mdtraj_atoms[0])
+
 
 
