@@ -6,7 +6,7 @@ This module contains functions to average mdtraj-object data
 from copy import deepcopy
 import numpy as np
 
-from ase.symbols import chemical_symbols as symbols
+from ase.data import chemical_symbols as symbols
 
 
 def average_energies(mdtraj_list, tstart):

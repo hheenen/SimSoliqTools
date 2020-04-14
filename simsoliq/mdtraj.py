@@ -6,7 +6,8 @@ This module contains the MDtraj object for data manipulation
 import os
 import numpy as np
 from ase.data import chemical_symbols as symbols
-from ase.symbols import Symbols
+# from ase.symbols import Symbols #TODO: delete this if Symbols-obj not needed
+from ase.utils import formula_hill
 
 from simsoliq.io.data_mdtraj import DataMDtraj
 from simsoliq.ase_atoms_utils import get_type_indices, get_type_atoms, \
@@ -316,10 +317,12 @@ class MDtraj(DataMDtraj):
         ind_ads = [i for i in range(len(traj0)) if i not in ind_subs+ind_solv]
 
         # prep composition string
-        sym = Symbols([atno[i] for i in ind_subs])
-        str_subs = sym.get_chemical_formula()
-        sym = Symbols([atno[i] for i in ind_ads])
-        str_ads = sym.get_chemical_formula()
+        str_subs = formula_hill([atno[i] for i in ind_subs])
+       #sym = Symbols([atno[i] for i in ind_subs]) #TODO: delete this if Symbols-obj not needed
+       #str_subs = sym.get_chemical_formula() #TODO: delete this if Symbols-obj not needed
+        str_ads = formula_hill([atno[i] for i in ind_ads])
+       #sym = Symbols([atno[i] for i in ind_ads]) #TODO: delete this if Symbols-obj not needed
+       #str_ads = sym.get_chemical_formula() #TODO: delete this if Symbols-obj not needed
         str_solv = "%iH2O"%len(solv) #hardcoded to water right now
 
         str_comp = "_".join([k for k in [str_subs, str_solv, str_ads]\

@@ -352,11 +352,6 @@ from cathelpers.misc import lines_key, _load_pickle_file, _write_pickle_file
 #   #matplotlibhelpers.write(filename,folder='output',\
 #   #    write_info = False,write_png=False,write_pdf=True,write_eps=False)
 
-#############################################################
-#############################################################
-#############################################################
-
-
 #def _sort_sub_runs(folders):
 #    bkeys = list(set(['_'.join(f.split('_')[:-1]) for f in folders]))
 #    fdict = {bk:[k for k in folders if '_'.join(k.split('_')[:-1]) == bk] \
@@ -389,6 +384,11 @@ from cathelpers.misc import lines_key, _load_pickle_file, _write_pickle_file
 #    for k in sdens:
 #        sdens[k] /= len(folders)
 #    return(sdens)
+
+#############################################################
+#############################################################
+#############################################################
+
 
 def _analyze_density(indens):
     sdens = deepcopy(indens)
