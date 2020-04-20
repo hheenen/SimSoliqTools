@@ -261,7 +261,7 @@ class DataMDtraj(object):
         return(sp_path)
 
 
-    def get_first_snapshot(self):
+    def get_single_snapshot(self, n=0):
         """
           method to return the first snapshot of a trajectory;
           this method circumvents reading the whole trajectory and is
@@ -269,22 +269,28 @@ class DataMDtraj(object):
  
           Parameters
           ----------
-          None
+          n : int / str
+            number of snapshot to retrieve, can also be a string for 
+            slicing, i.e. '::100'
 
           Returns
           -------
           traj0 : ase-atoms object
-            first snapshot of trajectory
+            nth snapshot of trajectory
 
         """
         fatoms = [f for f in os.listdir(self.bpath) \
             if f[:12] == 'mdtraj_atoms']
         fatoms.sort()
+        fail = False
         if len(fatoms) > 0:
-            return(read(self.bpath+'/'+fatoms[0],0))
-        else:
+            try:
+                return(read(self.bpath+'/'+fatoms[0],n))
+            except StopIteration:
+                fail = True
+        if len(fatoms) == 0 or fail:
             self._retrieve_atom_data()
-            return(self.mdtraj_atoms[0])
+            return(self.mdtraj_atoms[n])
 
 
 
