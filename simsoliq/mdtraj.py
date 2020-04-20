@@ -268,9 +268,11 @@ class MDtraj(DataMDtraj):
         """
         # NOTE: could be robuster by including type of coordinating
         #       ion and find a better method than rcut
-        self._retrieve_atom_data(self.safe_asetraj_files)
-        atoms = self.mdtraj_atoms[snapshot]
-        
+        if snapshot > 0:
+            self._retrieve_atom_data(self.safe_asetraj_files)
+            atoms = self.mdtraj_atoms[snapshot]
+        else:
+            atoms = self.get_first_snapshot()
         pos = atoms.get_scaled_positions()
         cell = atoms.get_cell()
         
