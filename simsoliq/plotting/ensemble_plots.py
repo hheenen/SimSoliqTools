@@ -59,7 +59,7 @@ def plot_running_av_ensemble(filename, edat, surftag = {}, tstart=5000, \
     clr = {subtags[i]:clrlist[i] for i in range(len(subtags))}
     
     # sort for subplots and make tags if none are given (remove underscores)
-    clist = list(set(['_'.join(ck.split('_')[:-1]) for ck in edat]))
+    clist = list(set(['_'.join(ck.split('_')[:-1]) for ck in edat])); clist.sort()
     cdict = {ck:{ekey for ekey in edat if ekey.find(ck) != -1} for ck in clist}
     if len(surftag) == 0:
         surftag = {ck:'-'.join(ck.split('_')) for ck in clist}
@@ -89,8 +89,8 @@ def plot_running_av_ensemble(filename, edat, surftag = {}, tstart=5000, \
 
     # legend
     for ads in clr:
-        axes[-1].plot(np.nan,np.nan, ls='-', color=clr[ads], label=r'%s'%ads)
-    axes[-1].legend(loc='best',prop={'size':7})
+        axes[0].plot(np.nan,np.nan, ls='-', color=clr[ads], label=r'%s'%ads)
+    axes[0].legend(loc='best',prop={'size':6},bbox_to_anchor=(0.0,0.2))
     
     # axis labels
     axes[0].set_ylabel(r'$\langle \Delta E \rangle (t)$ (eV)')
