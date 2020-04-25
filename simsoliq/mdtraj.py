@@ -267,9 +267,11 @@ class MDtraj(DataMDtraj):
         """
         # NOTE: could be robuster by including type of coordinating
         #       ion and find a better method than rcut
-        self._retrieve_atom_data(self.safe_asetraj_files)
-        atoms = self.mdtraj_atoms[snapshot]
-        
+       #if snapshot > 0:
+       #    self._retrieve_atom_data(self.safe_asetraj_files)
+       #    atoms = self.mdtraj_atoms[snapshot]
+       #else:
+        atoms = self.get_single_snapshot(snapshot)
         pos = atoms.get_scaled_positions()
         cell = atoms.get_cell()
         
@@ -299,11 +301,14 @@ class MDtraj(DataMDtraj):
         
         """
         # get atomic data
-        traj0 = self.get_first_snapshot()
+        traj0 = self.get_single_snapshot()
         atno = traj0.get_atomic_numbers()
         
-        # get solvent indices
-        solv = self._get_solvent_indices(snapshot=0)
+        # get solvent indices, for robustness take longer index list of
+        #                      first and last snapshot
+        solv = [self._get_solvent_indices(snapshot=n) for n in [0,-1]]
+        nsolv = [len(s) for s in solv]
+        solv = solv[np.argmax(nsolv)]
         assert np.all([len(solv[k])==2 for k in solv])
         ind_solv = list(solv.keys()) + list(np.array(list(solv.values())).flatten())
 
@@ -341,7 +346,7 @@ class MDtraj(DataMDtraj):
         """
         # NOTE: get substrate indices: is assumed to be fixed or 
         #       lowest z-coordinate
-        traj0 = self.get_first_snapshot()
+        traj0 = self.get_single_snapshot()
         atno = traj0.get_atomic_numbers()
         
         if len(traj0.constraints) > 0:
