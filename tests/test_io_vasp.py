@@ -36,6 +36,10 @@ class TestIOVasp(unittest.TestCase):
         a = init_mdtraj("data/Pt111_24H2O_x/vasprun*.xml", fmat='vasp', concmode='level')
         self._eval_engs(a)
     
+    def test_get_energies_level_nested(self):
+        a = init_mdtraj("data/Pt111_24H2O_x/run*/OUTCAR", fmat='vasp', concmode='level_nested', fnest='run*')
+        self._eval_engs(a)
+    
     def _eval_engs(self, a):
         # test dictionary
         engs = a.get_traj_energies()

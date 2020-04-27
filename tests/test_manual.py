@@ -3,7 +3,7 @@
 from simsoliq.io import init_mdtraj
 import numpy as np
 from ase.symbols import chemical_symbols
-from simsoliq.mdtraj_average import adjust_density_to_substrate
+#from simsoliq.mdtraj_average import adjust_density_to_substrate
 from simsoliq.plotting.standard_plots import plot_density
 
 if __name__ == "__main__":
@@ -25,12 +25,19 @@ if __name__ == "__main__":
 #   for key in hist_dicts:
 #       print(key, np.where(hist_dicts[key] != 0.0)[0].size)
     
-    a = init_mdtraj("data/Pt111_24H2O_OH_long/vasprun.xml", fmat='vasp')
-    densdata = a.get_density_profile(height_axis=2, savepkl=False)
-   
-    # for testing purposes
-    substrate = a.get_substrate_types()[0]
-    esub = chemical_symbols[substrate]
-    dens2 = adjust_density_to_substrate(densdata, esub)
-    plot_density('density_solvent_only_2', dens2['binc'], dens2['hists'])
+#   a = init_mdtraj("data/Pt111_24H2O_OH_long/vasprun.xml", fmat='vasp')
+#   densdata = a.get_density_profile(height_axis=2, savepkl=False)
+#  
+#   # for testing purposes
+#   substrate = a.get_substrate_types()[0]
+#   esub = chemical_symbols[substrate]
+#   dens2 = adjust_density_to_substrate(densdata, esub)
+#   plot_density('density_solvent_only_2', dens2['binc'], dens2['hists'])
+
+    a = init_mdtraj("data/Pt111_24H2O_x/run*/OUTCAR", fmat='vasp', concmode='level_nested', fnest='run*')
+    print(a.get_potential_energies())
+    
+    a = init_mdtraj("data/Pt111_24H2O_x/OUTCAR", fmat='vasp', concmode='nested', fnest='restart')
+    print(a.get_potential_energies())
+
 

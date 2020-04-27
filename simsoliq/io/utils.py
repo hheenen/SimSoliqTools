@@ -36,6 +36,25 @@ def _level_iterator(efunc, wpath0, fident):
     return(dat)
 
 
+def _level_nested_iterator(efunc, wpath0, fident, fnest):
+    """
+      helper function to iterate output files
+    
+    """
+    # find and sort output files matching `fident`
+    outfiles = [f+'/'+fident for f in os.listdir(wpath0) \
+        if os.path.isfile(wpath0+'/'+f+'/'+fident) and \
+            np.all([f.find(s) != -1 for s in fnest.split('*')])]
+    outfiles.sort()
+
+    # collect data from outfiles
+    data = []
+    for outf in outfiles:
+        data.append(efunc(wpath0, outf))
+    dat = _concat_data(data)
+    return(dat)
+
+
 def _concat_data(data):
     """
       helper function to stack output data

@@ -1,0 +1,129 @@
+ running on   24 total cores
+ distrk:  each k-point on   24 cores,    1 groups
+ distr:  one band on   24 cores,    1 groups
+ using from now: INCAR     
+ vasp.5.4.4.18Apr17-6-g9f103f2a35 (build Feb 25 2019 10:51:38) complex          
+  
+ POSCAR found type information on POSCAR  H  O  Pt
+ POSCAR found :  3 types and     108 ions
+ scaLAPACK will be used
+
+ ----------------------------------------------------------------------------- 
+|                                                                             |
+|           W    W    AA    RRRRR   N    N  II  N    N   GGGG   !!!           |
+|           W    W   A  A   R    R  NN   N  II  NN   N  G    G  !!!           |
+|           W    W  A    A  R    R  N N  N  II  N N  N  G       !!!           |
+|           W WW W  AAAAAA  RRRRR   N  N N  II  N  N N  G  GGG   !            |
+|           WW  WW  A    A  R   R   N   NN  II  N   NN  G    G                |
+|           W    W  A    A  R    R  N    N  II  N    N   GGGG   !!!           |
+|                                                                             |
+|      For optimal performance we recommend to set                            |
+|        NCORE= 4 - approx SQRT( number of cores)                             |
+|      NCORE specifies how many cores store one orbital (NPAR=cpu/NCORE).     |
+|      This setting can  greatly improve the performance of VASP for DFT.     |
+|      The default,   NCORE=1            might be grossly inefficient         |
+|      on modern multi-core architectures or massively parallel machines.     |
+|      Do your own testing !!!!                                               |
+|      Unfortunately you need to use the default for GW and RPA calculations. |
+|      (for HF NCORE is supported but not extensively tested yet)             |
+|                                                                             |
+ ----------------------------------------------------------------------------- 
+
+
+ ----------------------------------------------------------------------------- 
+|                                                                             |
+|  ADVICE TO THIS USER RUNNING 'VASP/VAMP'   (HEAR YOUR MASTER'S VOICE ...):  |
+|                                                                             |
+|      You enforced a specific xc-type in the INCAR file,                     |
+|      a different type was found on the POTCAR file                          |
+|          I HOPE YOU KNOW, WHAT YOU ARE  DOING                               |
+|                                                                             |
+ ----------------------------------------------------------------------------- 
+
+ LDA part: xc-table for Pade appr. of Perdew
+ POSCAR found type information on POSCAR  H  O  Pt
+ POSCAR found :  3 types and     108 ions
+ POSCAR, INCAR and KPOINTS ok, starting setup
+ FFT: planning ...
+ WAVECAR not read
+ prediction of wavefunctions initialized - no I/O
+ entering main loop
+       N       E                     dE             d eps       ncg     rms          rms(c)
+DAV:   1     0.374908419508E+04    0.37491E+04   -0.21327E+05  4802   0.115E+03
+DAV:   2    -0.141685583588E+03   -0.38908E+04   -0.36938E+04  5788   0.286E+02
+DAV:   3    -0.560721670568E+03   -0.41904E+03   -0.40516E+03  5204   0.982E+01
+DAV:   4    -0.574865168303E+03   -0.14143E+02   -0.14019E+02  5668   0.183E+01
+DAV:   5    -0.575257306525E+03   -0.39214E+00   -0.39151E+00  6260   0.285E+00    0.689E+01
+RMM:   6    -0.533194407006E+03    0.42063E+02   -0.17943E+02  4639   0.196E+01    0.444E+01
+RMM:   7    -0.605283461235E+03   -0.72089E+02   -0.11710E+02  4674   0.123E+01    0.650E+01
+RMM:   8    -0.577809759697E+03    0.27474E+02   -0.75793E+01  4640   0.917E+00    0.627E+01
+RMM:   9    -0.537365578560E+03    0.40444E+02   -0.13215E+01  4638   0.467E+00    0.289E+01
+RMM:  10    -0.547514276245E+03   -0.10149E+02   -0.44074E+01  4644   0.842E+00    0.527E+01
+RMM:  11    -0.540544327631E+03    0.69699E+01   -0.15148E+01  4637   0.490E+00    0.355E+01
+RMM:  12    -0.532878821644E+03    0.76655E+01   -0.56439E+00  4636   0.335E+00    0.213E+01
+RMM:  13    -0.529534864009E+03    0.33440E+01   -0.67141E+00  4635   0.328E+00    0.118E+01
+RMM:  14    -0.528729238481E+03    0.80563E+00   -0.15317E+00  4660   0.146E+00    0.700E+00
+RMM:  15    -0.528545900694E+03    0.18334E+00   -0.16755E-01  4664   0.501E-01    0.561E+00
+RMM:  16    -0.528511727863E+03    0.34173E-01   -0.34580E-02  4705   0.230E-01    0.532E+00
+RMM:  17    -0.528438899177E+03    0.72829E-01   -0.50813E-02  4642   0.292E-01    0.435E+00
+RMM:  18    -0.528411149846E+03    0.27749E-01   -0.18203E-01  4641   0.565E-01    0.377E+00
+RMM:  19    -0.528327826504E+03    0.83323E-01   -0.85559E-02  4643   0.384E-01    0.220E+00
+RMM:  20    -0.528283934137E+03    0.43892E-01   -0.28055E-02  4665   0.218E-01    0.105E+00
+RMM:  21    -0.528275412581E+03    0.85216E-02   -0.74396E-03  4657   0.112E-01    0.895E-01
+RMM:  22    -0.528258937729E+03    0.16475E-01   -0.16158E-02  4640   0.155E-01    0.848E-01
+RMM:  23    -0.528248331927E+03    0.10606E-01   -0.55329E-03  4655   0.978E-02    0.641E-01
+RMM:  24    -0.528238581014E+03    0.97509E-02   -0.36525E-03  4642   0.782E-02    0.477E-01
+RMM:  25    -0.528231769051E+03    0.68120E-02   -0.17657E-03  4643   0.513E-02    0.398E-01
+RMM:  26    -0.528223757874E+03    0.80112E-02   -0.15305E-03  4642   0.432E-02    0.363E-01
+RMM:  27    -0.528218187483E+03    0.55704E-02   -0.95441E-04  4648   0.331E-02    0.304E-01
+RMM:  28    -0.528207438353E+03    0.10749E-01   -0.24680E-03  4639   0.465E-02    0.269E-01
+RMM:  29    -0.528194608534E+03    0.12830E-01   -0.43332E-03  4666   0.582E-02    0.230E-01
+RMM:  30    -0.528188921517E+03    0.56870E-02   -0.17398E-03  4810   0.372E-02    0.207E-01
+RMM:  31    -0.528182033726E+03    0.68878E-02   -0.21754E-03  4668   0.409E-02    0.176E-01
+RMM:  32    -0.528174804087E+03    0.72296E-02   -0.31142E-03  4720   0.481E-02    0.145E-01
+RMM:  33    -0.528168865308E+03    0.59388E-02   -0.35128E-03  4747   0.507E-02    0.105E-01
+RMM:  34    -0.528166087022E+03    0.27783E-02   -0.18889E-03  4820   0.377E-02    0.829E-02
+RMM:  35    -0.528164607120E+03    0.14799E-02   -0.90769E-04  4908   0.261E-02    0.655E-02
+RMM:  36    -0.528163301511E+03    0.13056E-02   -0.85568E-04  4731   0.250E-02    0.486E-02
+RMM:  37    -0.528162411920E+03    0.88959E-03   -0.96789E-04  4700   0.269E-02    0.341E-02
+RMM:  38    -0.528162165317E+03    0.24660E-03   -0.60616E-04  4850   0.219E-02    0.218E-02
+RMM:  39    -0.528162169318E+03   -0.40012E-05   -0.91433E-05  5300   0.875E-03
+    1 T=   313. E= -.54305027E+03 F= -.55876023E+03 E0= -.55856153E+03  EK= 0.33939E+01 SP= 0.12E+02 SK= 0.12E-01
+ bond charge predicted
+       N       E                     dE             d eps       ncg     rms          rms(c)
+DAV:   1    -0.528132512249E+03    0.29653E-01   -0.19214E+01  4812   0.721E+00    0.139E+00
+RMM:   2    -0.528179939611E+03   -0.47427E-01   -0.60288E-01  4664   0.115E+00    0.105E+00
+RMM:   3    -0.528189874758E+03   -0.99351E-02   -0.42730E-02  4645   0.304E-01    0.154E+00
+RMM:   4    -0.528192372356E+03   -0.24976E-02   -0.30717E-02  4644   0.235E-01    0.139E+00
+RMM:   5    -0.528191145899E+03    0.12265E-02   -0.23126E-02  4640   0.187E-01    0.139E+00
+RMM:   6    -0.528176058833E+03    0.15087E-01   -0.11505E-02  4637   0.144E-01    0.680E-01
+RMM:   7    -0.528172772719E+03    0.32861E-02   -0.44338E-03  4637   0.926E-02    0.318E-01
+RMM:   8    -0.528173015934E+03   -0.24322E-03   -0.19365E-03  4636   0.595E-02    0.348E-01
+RMM:   9    -0.528172434623E+03    0.58131E-03   -0.92602E-04  4640   0.429E-02    0.186E-01
+RMM:  10    -0.528172156382E+03    0.27824E-03   -0.28679E-04  4637   0.234E-02    0.448E-02
+RMM:  11    -0.528172168903E+03   -0.12521E-04   -0.64755E-05  4639   0.111E-02
+    2 T=   318. E= -.54304640E+03 F= -.55877212E+03 E0= -.55857338E+03  EK= 0.34537E+01 SP= 0.12E+02 SK= 0.97E-02
+Information: wavefunction orthogonal band  322  0.7929
+Information: wavefunction orthogonal band  326  0.7973
+Information: wavefunction orthogonal band  327  0.7747
+Information: wavefunction orthogonal band  328  0.8931
+Information: wavefunction orthogonal band  329  0.8910
+Information: wavefunction orthogonal band  328  0.8725
+Information: wavefunction orthogonal band  107  0.8870
+Information: wavefunction orthogonal band  328  0.8785
+ bond charge predicted
+ prediction of wavefunctions
+       N       E                     dE             d eps       ncg     rms          rms(c)
+DAV:   1    -0.527871231497E+03    0.30092E+00   -0.28382E+01  5608   0.169E+01    0.847E-01
+RMM:   2    -0.528138254311E+03   -0.26702E+00   -0.27376E+00  4643   0.249E+00    0.689E-01
+RMM:   3    -0.528160745282E+03   -0.22491E-01   -0.96318E-02  4812   0.353E-01    0.139E+00
+RMM:   4    -0.528141842637E+03    0.18903E-01   -0.17277E-02  4715   0.153E-01    0.581E-01
+RMM:   5    -0.528142542917E+03   -0.70028E-03   -0.59956E-03  4647   0.105E-01    0.693E-01
+RMM:   6    -0.528140442387E+03    0.21005E-02   -0.41194E-03  4649   0.941E-02    0.439E-01
+RMM:   7    -0.528139456903E+03    0.98548E-03   -0.18542E-03  4645   0.599E-02    0.225E-01
+RMM:   8    -0.528139505419E+03   -0.48516E-04   -0.81484E-04  4645   0.397E-02
+    3 T=   318. E= -.54305214E+03 F= -.55873962E+03 E0= -.55854074E+03  EK= 0.34548E+01 SP= 0.12E+02 SK= 0.75E-02
+Information: wavefunction orthogonal band  331  0.4235
+ bond charge predicted
+ prediction of wavefunctions
+ wavefunctions rotated

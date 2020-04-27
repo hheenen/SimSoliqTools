@@ -7,7 +7,8 @@ the mdtraj object
 import os
 import numpy as np
 from ase.io import read, write
-from simsoliq.io.utils import _nested_iterator, _level_iterator
+from simsoliq.io.utils import _nested_iterator, _level_iterator, \
+    _level_nested_iterator
 from simsoliq.helper_functions import load_pickle_file, write_pickle_file
 
 
@@ -69,8 +70,8 @@ class DataMDtraj(object):
 
         # handling of file-iterators
         self.concmode = concmode
-        if concmode == 'nested' and fnest == None:
-            raise ValueError("need to define fnest for concmode='nested")
+        if concmode in ['nested', 'level_nested'] and fnest == None:
+            raise ValueError("need to define fnest for `nested` concmodes")
         if concmode == 'nested' and fident.find('*') != -1:
             raise ValueError("conmode='nested' requires unambigous fident")
         self.fnest = fnest
@@ -144,6 +145,10 @@ class DataMDtraj(object):
         elif self.concmode == 'level':
             return(_level_iterator(efunc,\
                 self.bpath, self.fident))
+        
+        elif self.concmode == 'level_nested':
+            return(_level_nested_iterator(efunc,\
+                self.bpath, self.fident, self.fnest))
 
         else:
             raise NotImplementedError("unknown concmode")
@@ -158,9 +163,9 @@ class DataMDtraj(object):
           Parameters
           ----------
           tag : str
-              tag for the singlepoint calculation folder singlepoints_`tag`
+            tag for the singlepoint calculation folder singlepoints_`tag`
           freq : float
-              frequency of snapshots used to prepare a singlepoint calculation
+            frequency of snapshots used to prepare a singlepoint calculation
 
           NOTE: it may be useful to implement a decorator or smth similar for
                 atom-structure manipulation of each snapshot
@@ -168,7 +173,7 @@ class DataMDtraj(object):
           Returns
           -------
           cpaths : list
-              list including all directories which were prepared
+            list including all directories which were prepared
         """
         # prepare path for singlepoints
         spname = 'singlepoints'
@@ -200,15 +205,16 @@ class DataMDtraj(object):
           Parameters
           ----------
           tag : str
-              tag for the singlepoint calculation folder singlepoints_`tag`
+            tag for the singlepoint calculation folder singlepoints_`tag`
           dkey : str
-              key to determine function for data read-out
+            key to determine function for data read-out
+            options include: 'epot', 'efermi', 'evac', 'wf'
 
           Returns
           -------
           sp_data : dict
-              dictionary containing sp data with {timestep:data}
-              dictionary is chosen as data could have any form
+            dictionary containing sp data with {timestep:data}
+            dictionary is chosen as data could have any form
         """
         # get sp_path directory
         sp_path = self._get_sp_path(tag=tag)

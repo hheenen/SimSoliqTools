@@ -39,7 +39,7 @@ class TestDensity(unittest.TestCase):
         av_dens = average_densities([trj1, trj2], tstart=0)
 
         # compare number of `populated bins`
-        out_compare = {'Osolv':23, 'Hsolv':37, 'Pt':0}
+        out_compare = {'Osolv':23, 'Hsolv':37, 'Pt':5}
         hists = av_dens['Pt36_24H2O']['hists']
         for key in hists:
             self.assertEqual(np.where(hists[key] != 0.0)[0].size, out_compare[key])
