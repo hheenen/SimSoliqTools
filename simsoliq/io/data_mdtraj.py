@@ -154,7 +154,7 @@ class DataMDtraj(object):
             raise NotImplementedError("unknown concmode")
 
 
-    def prepare_singlepoint_calculations(self, tag='', freq=500, **kwargs):
+    def prepare_singlepoint_calculations(self, tag='', freq=500, spatoms=None, **kwargs):
         """
           method to prepare single point calculations on snapshots of the 
           trajectory. This can be usefull if data relying on heavy calculations
@@ -166,9 +166,8 @@ class DataMDtraj(object):
             tag for the singlepoint calculation folder singlepoints_`tag`
           freq : float
             frequency of snapshots used to prepare a singlepoint calculation
-
-          NOTE: it may be useful to implement a decorator or smth similar for
-                atom-structure manipulation of each snapshot
+          spatoms : list of ase-atoms objects (optional)
+            if manipulated atoms are to be used can be handed here
 
           Returns
           -------
@@ -183,14 +182,20 @@ class DataMDtraj(object):
         if not os.path.isdir(sppath):
             os.mkdir(sppath)
 
+        # get atoms 
+        if spatoms == None:
+            self._retrieve_atom_data()
+            spatoms = self.mdtraj_atoms
+        else:
+            assert len(spatoms) == self.mdtrajlen
+
+        # prepare folders for freq
         cpaths = []
-        # get atoms and prepare folders for freq
-        self._retrieve_atom_data()
         for i in range(0,self.mdtrajlen,freq):
             cdir = sppath+'/sp_step{0:05d}'.format(i)
             if not os.path.isdir(cdir):
                 os.mkdir(cdir)
-            prep = self.sp_prep(cdir, self.bpath, self.mdtraj_atoms[i], **kwargs)
+            prep = self.sp_prep(cdir, self.bpath, spatoms[i], **kwargs)
             if prep:
                 cpaths.append(cdir.split('/')[-1])
         return(cpaths)
@@ -285,18 +290,17 @@ class DataMDtraj(object):
             nth snapshot of trajectory
 
         """
-        fatoms = [f for f in os.listdir(self.bpath) \
-            if f[:12] == 'mdtraj_atoms']
-        fatoms.sort()
-        fail = False
-        if len(fatoms) > 0:
-            try:
-                return(read(self.bpath+'/'+fatoms[0],n))
-            except StopIteration:
-                fail = True
-        if len(fatoms) == 0 or fail:
-            self._retrieve_atom_data()
-            return(self.mdtraj_atoms[n])
+        if len(self.mdtraj_atoms) == 0:
+            fatoms = [f for f in os.listdir(self.bpath) \
+                if f[:12] == 'mdtraj_atoms']
+            fatoms.sort()
+            if len(fatoms) > 0:
+                try:
+                    return(read(self.bpath+'/'+fatoms[0],n))
+                except StopIteration:
+                    pass
+        self._retrieve_atom_data()
+        return(self.mdtraj_atoms[n])
 
 
 

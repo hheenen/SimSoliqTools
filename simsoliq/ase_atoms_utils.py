@@ -33,7 +33,7 @@ def get_inds_atoms(atoms,inds):
       given ASE-Atoms object `atoms` only containing
       atoms with indeces `inds`
     """
-    return(Atoms(numbers=atoms.get_atomic_numbers()[ind_types],\
+    return(Atoms(numbers=atoms.get_atomic_numbers()[inds],\
                  positions=atoms.get_positions()[inds,:],\
                  cell=atoms.get_cell()))
 

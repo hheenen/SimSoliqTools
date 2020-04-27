@@ -29,7 +29,22 @@ class TestMDTraj(unittest.TestCase):
         dat_compare = np.array([[-555.36631751, -555.31838954, -555.28479676],[-555.24148481, -555.19392417, -555.16767902]])
         e_tot = sort_energies([trj1, trj2])['etot']['Pt36_24H2O']
         self.assertTrue(np.array_equal(dat_compare, np.around(e_tot, 8)))
-    
+
+    def test_atom_manipulation(self):
+        a = init_mdtraj("data/Pt111_24H2O_x/vasprun.xml", fmat='vasp', concmode='nested', fnest='restart')
+       
+        ref_data = [{1: 48, 8: 24, 78: 36}, {1: 48, 8: 24}, {78: 36}]
+
+        traj0 = a.get_single_snapshot(n=0)
+        solv0 = a.isolate_solvent_snapshot(0)
+        slab0 = a.isolate_nosolvent_snapshot(0)
+
+        slabs = [traj0, solv0, slab0]
+
+        for i in range(len(slabs)):
+            for k in np.unique(slabs[i].get_atomic_numbers()):
+                self.assertEqual(np.where(slabs[i].get_atomic_numbers() == k)[0].size, ref_data[i][k])
+
 
 if __name__ == '__main__':
     unittest.main()

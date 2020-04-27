@@ -287,6 +287,9 @@ class MDtraj(DataMDtraj):
           solv : dict
               dict including each central atom as a key and 
               coordinating atoms as value which fulfill criteria
+
+          #TODO: should get an option of averaging when water-structure
+                 is implemented
         
         """
         # NOTE: could be robuster by including type of coordinating
@@ -377,5 +380,62 @@ class MDtraj(DataMDtraj):
             type_subs = [atno[ind_zmin]]
         
         return(type_subs)
+
+
+    def isolate_solvent_snapshot(self, snapshot):
+        """
+          method to return the solvent structure only
+ 
+          Parameters
+          ----------
+          snapshot : int
+            snapshot of which to return the isolated solvent
+ 
+          Returns
+          -------
+          atoms_solvent : ase-atoms object
+            new ase-atoms object with same unit cell including
+            only solvent atoms
+        
+        """
+        # get atoms object of snapshot
+        snap = self.get_single_snapshot(snapshot)
+        
+        # isolate solvent indices
+        solv = self._get_solvent_indices(snapshot)
+        ind_solv = list(solv.keys()) + \
+            list(np.array(list(solv.values())).flatten())
+        
+        atoms_solvent = get_inds_atoms(snap, ind_solv)
+        return(atoms_solvent)
+
+
+    def isolate_nosolvent_snapshot(self, snapshot):
+        """
+          method to return the structure without solvent
+ 
+          Parameters
+          ----------
+          snapshot : int
+            snapshot of which to return the isolated solvent
+ 
+          Returns
+          -------
+          atoms_slab : ase-atoms object
+            new ase-atoms object with same unit cell excluding
+            solvent
+        
+        """
+        # get atoms object of snapshot
+        snap = self.get_single_snapshot(snapshot)
+        
+        # isolate solvent indices
+        solv = self._get_solvent_indices(snapshot)
+        ind_solv = list(solv.keys()) + \
+            list(np.array(list(solv.values())).flatten())
+        ind_rest = [i for i in range(len(snap)) if i not in ind_solv]
+        
+        atoms_solvent = get_inds_atoms(snap, ind_rest)
+        return(atoms_solvent)
 
 
