@@ -385,223 +385,224 @@ from cathelpers.misc import lines_key, _load_pickle_file, _write_pickle_file
 #        sdens[k] /= len(folders)
 #    return(sdens)
 
+
+#def _analyze_density(indens):
+#    sdens = deepcopy(indens)
+#    # delta ind for 5 AA
+#    id5 = np.where(sdens['binc']-sdens['binc'][0] > 2.0)[0][0]
+#    # primitive identification of 1st peak density
+#    dat = {}
+#    dh2o = {'Ow':1/18., 'Hw':2/18.}
+#    for wk in ['Ow', 'Hw']:
+#        ipk = sdens[wk].argmax()
+#        ilay = ipk+sdens[wk][ipk:ipk+id5].argmin()
+#        # integrate # of H2O
+#        igr = np.trapz(sdens[wk][:ilay], sdens['binc'][:ilay])
+#        dat.update({wk:[ilay, ipk, igr/dh2o[wk]]})
+#        # peak onset
+#        #print(wk, sdens['binc'][np.where(sdens[wk] != 0.0)[0][0]] - sdens['binc'][0])
+#    return(dat)
+#
+#def _isolate_pk(sdens,ipk,k):
+#    x = sdens['binc'][ipk]-sdens['binc'][0]
+#    y = sdens[k][ipk]
+#    return(np.array([x,y]))
+#
+#def plot_density_fancy(filename, folders):
+#    colors = {'Ow':'r','Hw':'c'}; tshift = {'Ow':0.7, 'Hw':-1.7}; dy = -0.03
+#    surftag = {'Cu111': 'Cu(111)', 'Cu211':'Cu(211)', 'Au111':'Au(111)', \
+#        'Pt111': 'Pt(111)', 'Cu211-6x4':'Cu(211)', 'Cu211-3x4':'Cu(211)', 'Pt111-6x4':'Pt(111)'}
+#    dh2o = {'Ow':1/18., 'Hw':2/18.}
+#    
+#    ref = _sort_sub_runs(folders)
+#    r = list(ref.keys())[0]
+#
+#    # make density
+#    sdens = _av_dens(folders)
+#    
+#    # for normalization
+#    aa = read(r+'_02/POSCAR')
+#    Acell = aa.get_volume()/aa.get_cell()[2,2]
+#            
+#    _set_plotting_env(width=3.37,height=3.37/ golden_ratio,\
+#                   lrbt=[0.18,0.95,0.20,0.95],fsize=9.0)
+#    fig, ax = plt.subplots(1,1)
+#    axes = _plot_density(sdens['binc'], {k:sdens[k] for k in sdens if k != 'binc'}, ax=ax)
+#    axes[0].annotate(r'%s'%surftag[r.split('_')[0]], xy=(0.45,0.7), xycoords='axes fraction',size=9)
+#            
+#    dpk = _analyze_density(sdens)
+#    print(50*'#')
+#    print(r, [[k, sdens['binc'][dpk[k][1]]-sdens['binc'][0], dpk[k][2]] for k in dpk])
+#
+#    # determine average density of clean sample
+#    x0 = sdens['binc'][0]
+#    iwl = np.where(sdens['binc']-x0 > 9)[0][0]
+#    ist = np.where(sdens['Ow'] > 1e-2)[0][0] #onset of noticable density
+#    dens = np.trapz(sdens['Ow'][:iwl], sdens['binc'][:iwl]) / (9.0-(sdens['binc'][ist]-x0)) 
+#    dens /= dh2o['Ow']
+#    print('average density %s excluding vacuum interface: %.2f'%(r, dens))
+#    
+#    lim_int = [dpk[k][0] for k in dpk]
+#    lim_int = int(np.mean(lim_int))
+#    
+#    nfac = {'Ow':1.0, 'Hw':2.0}
+#    for k in dpk: #plot first layer
+#        axes[0].fill_between(sdens['binc'][:lim_int]-sdens['binc'][0], 0, sdens[k][:lim_int], color=colors[k], alpha=0.3)
+#        pxy = _isolate_pk(sdens,dpk[k][1],k)
+#        ist = np.where(sdens[k] > 1e-2)[0][0] #onset of noticable density
+#        Nh2o = dh2o[k]*(sdens['binc'][lim_int]-sdens['binc'][ist])*1e-8 #normalization of water density
+#        Nnum = 1e-9 # unit 1e-9 mol/cm2
+#        Ncell = Acell * (1e-8**2.0) # unit-cell area in cm2
+#        Navg = 6.02214e23
+#        igr = np.trapz(sdens[k][:lim_int], sdens['binc'][:lim_int]*1e-8) * Ncell *Navg / nfac[k] # / Nnum #Nh2o
+#        axes[0].annotate(r'%.1f'%igr, xy=pxy+np.array([tshift[k]/10.0,dy]), xytext=pxy+np.array([tshift[k], -0.01]), size=8, color=colors[k],
+#            arrowprops=dict(arrowstyle="-",connectionstyle="arc",color=colors[k]))
+#    # make pretty
+#    axes[0].set_xlabel(r'z ($\mathrm{\AA}$)')
+#    axes[0].set_ylabel(r'density (mol/cm$^3$)')
+#    leg = axes[0].legend(loc=1,prop={'size':7},framealpha=1.0,facecolor='w')
+#    [axes[i].set_zorder(99) for i in range(1)]#2)]
+#    writefig(filename)
+# 
+#def _process_densities(filename, folders, write_eps=False):
+#    surftag = {'Cu111': 'Cu(111)', 'Cu211':'Cu(211)', 'Au111':'Au(111)', \
+#        'Pt111': 'Pt(111)', 'Cu211-6x4':'Cu(211)', 'Cu211-3x4':'Cu(211)', 'Pt111-6x4':'Pt(111)'}
+#    colors = {'Ow':'r','Hw':'c'}; tshift = {'Ow':0.7, 'Hw':-1.7}; dy = -0.03; #tshift = {'Ow':0.7, 'Hw':-1.5}; dy = -0.05
+#    # presort keys
+#    aorder = ['CO','CHO','COH','OCCHO','OH','OOH']
+#    ads = [k for k in folders if np.any([k.find(m) != -1 for m in aorder])]
+#    ads = _sort_sub_runs(ads)
+#    ref = [k for k in folders if np.all([k.find(m) == -1 for m in aorder])]
+#    ref = _sort_sub_runs(ref)
+#
+#    # fine-tuning
+#    i_shift = {'Cu211_15H2O':2}; txshift = {'Pt111_24H2O':np.array([0.15,-0.03]), 'Cu211_15H2O':np.array([0.2,0.0])}
+#    
+#    dh2o = {'Ow':1/18., 'Hw':2/18.}
+#    
+#    # all densities sampled from 5e3 onward
+#    for r in ref:
+#        aa = read(r+'_02/POSCAR')
+#        Acell = aa.get_volume()/aa.get_cell()[2,2]
+#        rads = [a for a in ads if '_'.join(a.split('_')[:-1]) == r]
+#        rads = [r+'_'+a for a in aorder if r+'_'+a in rads]
+#        if len(rads) > 0:
+#            # avering densities
+#            sdens = _av_dens(ref[r])
+#            
+#            _set_plotting_env(width=3.37,height=3.37/ golden_ratio *1.5,\
+#                           lrbt=[0.18,0.95,0.15,0.95],fsize=9.0)
+#            if r == 'Cu211_15H2O':
+#                _set_plotting_env(width=3.37,height=3.37/ golden_ratio *1.8,\
+#                               lrbt=[0.18,0.95,0.12,0.98],fsize=9.0)
+#
+#            #fig, axes = plt.subplots(len(ref[r])+1,1)#,figsize=np.array([6.4,4.8])*nplot/6.0)
+#            fig, axes = plt.subplots(len(rads)+1,1)#,figsize=np.array([6.4,4.8])*nplot/6.0)
+#            axes[0] = _plot_density(sdens['binc'], {k:sdens[k] for k in sdens if k != 'binc'}, ax=axes[0])
+#            axes[0][0].annotate(r'%s'%surftag[r.split('_')[0]], xy=(0.45,0.7), xycoords='axes fraction',size=9)
+#            
+#            dpk = _analyze_density(sdens)
+#            print(50*'#')
+#            print(r, [[k, sdens['binc'][dpk[k][1]]-sdens['binc'][0], dpk[k][2]] for k in dpk])
+#
+#            # determine average density of clean sample
+#            x0 = sdens['binc'][0]
+#            iwl = np.where(sdens['binc']-x0 > 9)[0][0]
+#            ist = np.where(sdens['Ow'] > 1e-2)[0][0] #onset of noticable density
+#            dens = np.trapz(sdens['Ow'][:iwl], sdens['binc'][:iwl]) / (9.0-(sdens['binc'][ist]-x0)) 
+#            dens /= dh2o['Ow']
+#            print('average density %s excluding vacuum interface: %.2f'%(r, dens))
+#
+#            dpk_ads = {ra:_analyze_density(_av_dens(ads[ra])) for ra in rads}
+#            lim_int = [dpk[k][0] for k in dpk] + [dpk_ads[ra][k][0] for ra in dpk_ads for k in dpk_ads[ra]]
+#            lim_int = int(np.mean(lim_int))
+#            if r in i_shift:
+#                lim_int += i_shift[r]
+#            
+#            txs = np.zeros(2)
+#            if r in txshift:
+#                txs = txshift[r]
+#            
+#            nfac = {'Ow':1.0, 'Hw':2.0}
+#            for k in dpk: #plot first layer
+#                axes[0][0].fill_between(sdens['binc'][:lim_int]-sdens['binc'][0], 0, sdens[k][:lim_int], color=colors[k], alpha=0.3)
+#                #axes[0][0].fill_between(sdens['binc'][:dpk[k][0]]-sdens['binc'][0], 0, sdens[k][:dpk[k][0]], color=colors[k], alpha=0.3)
+#                pxy = _isolate_pk(sdens,dpk[k][1],k)
+#                ist = np.where(sdens[k] > 1e-2)[0][0] #onset of noticable density
+#                Nh2o = dh2o[k]*(sdens['binc'][lim_int]-sdens['binc'][ist])*1e-8 #normalization of water density
+#                Nnum = 1e-9 # unit 1e-9 mol/cm2
+#                Ncell = Acell * (1e-8**2.0) # unit-cell area in cm2
+#                Navg = 6.02214e23
+#                #igr = np.trapz(sdens[k][:lim_int], sdens['binc'][:lim_int]) / dh2o[k]
+#                igr = np.trapz(sdens[k][:lim_int], sdens['binc'][:lim_int]*1e-8) * Ncell *Navg / nfac[k] # / Nnum #Nh2o
+#                #axes[0][0].annotate(r'%.1f'%dpk[k][2], xy=pxy+np.array([tshift[k]/4.0,dy]), xytext=pxy+np.array([tshift[k], -0.01]), size=8, color=colors[k],
+#                axes[0][0].annotate(r'%.1f'%igr, xy=pxy+np.array([tshift[k]/10.0,dy]), xytext=pxy+np.array([tshift[k], -0.01])+txs, size=8, color=colors[k],
+#                    arrowprops=dict(arrowstyle="-",connectionstyle="arc",color=colors[k]))
+#
+#            n = 1
+#            for ra in rads:
+#                radens = _av_dens(ads[ra])
+#                axes[n] = _plot_density(radens['binc'], {k:radens[k] for k in radens if k != 'binc'}, ax=axes[n])
+#                axes[n][0].annotate(r'%s'%ra.split('_')[-1], xy=(0.45,0.7), xycoords='axes fraction',size=9)
+#            
+#                dpk = _analyze_density(radens)
+#                print(ra, [[k, sdens['binc'][dpk[k][1]]-sdens['binc'][0], dpk[k][2]] for k in dpk])
+#                for k in dpk: #plot first layer
+#                    axes[n][0].fill_between(radens['binc'][:lim_int]-radens['binc'][0], 0, radens[k][:lim_int], color=colors[k], alpha=0.3)
+#                    #axes[n][0].fill_between(radens['binc'][:dpk[k][0]]-radens['binc'][0], 0, radens[k][:dpk[k][0]], color=colors[k], alpha=0.3)
+#                    pxy = _isolate_pk(sdens,dpk[k][1],k)
+#                    ist = np.where(radens[k] > 1e-2)[0][0] #onset of noticable density
+#                    Nh2o = dh2o[k]*(radens['binc'][lim_int]-radens['binc'][ist])*1e-8 #normalization of water density
+#                    Nnum = 1e-9 # unit 1e-9 mol/cm2
+#                    if ra.find('COH') != -1 and k == 'Hw':
+#                        pxy = np.array([2.0,0.15])
+#                    #igr = np.trapz(radens[k][:lim_int], radens['binc'][:lim_int]) / dh2o[k]
+#                    #igr = np.trapz(radens[k][:lim_int], radens['binc'][:lim_int]*1e-8) / Nnum #Nh2o
+#                    igr = np.trapz(radens[k][:lim_int], radens['binc'][:lim_int]*1e-8) * Ncell *Navg / nfac[k] # / Nnum #Nh2o
+#                    #axes[n][0].annotate(r'%.1f'%dpk[k][2], xy=pxy+np.array([tshift[k]/4.0,dy]), xytext=pxy+np.array([tshift[k], -0.01]), size=8, color=colors[k],
+#                    axes[n][0].annotate(r'%.1f'%igr, xy=pxy+np.array([tshift[k]/10.0,dy]), xytext=pxy+np.array([tshift[k], -0.01])+txs, size=8, color=colors[k],
+#                        arrowprops=dict(arrowstyle="-",connectionstyle="arc",color=colors[k]))
+#                
+#                n += 1
+#            print(50*'#')
+#           #n = 1
+#           #for sub in ref[r]:
+#           #    # load and adjust size to metal
+#           #    denspkl = '%s/density_dat.pkl'%sub
+#           #    dens = _load_pickle_file(denspkl)
+#           #    dens['binc'], dens['hist_dicts'] = _adjust_density_to_metal(\
+#           #        dens['binc'], dens['hist_dicts'], sub[:2])
+#           #    axes[n] = _plot_density(dens['binc'], dens['hist_dicts'], ax=axes[n])
+#           #    n += 1
+#            
+#            # make pretty
+#            #for s in range(2):
+#            for s in range(1):
+#                #lims = np.array([list(ax[s].get_ylim()) for ax in axes])
+#                #mlims = (lims[:,0].min(),lims[:,1].max())
+#                lims = np.array([list(ax[s].get_xlim()) for ax in axes])
+#                #mlims = (lims[:,0].min(),lims[:,1].min())
+#                mlims = (0.0,lims[:,1].min())
+#                [ax[s].set_xlim(mlims) for ax in axes]
+#                [ax[s].set_ylim(0.0,0.27) for ax in axes]
+#            if r == 'Cu211_15H2O':
+#                [ax[0].yaxis.set_major_locator(MultipleLocator(0.1)) for ax in axes]
+#            [axes[i][0].set_xticklabels([]) for i in range(len(axes)-1)]
+#            axes[-1][0].set_xlabel(r'z ($\mathrm{\AA}$)')
+#            axes[len(axes)//2][0].set_ylabel(r'density (mol/cm$^3$)')
+#            if len(axes)%2 == 0:
+#                axes[len(axes)//2][0].yaxis.set_label_coords(-0.12, 1.0)
+#            #axes[len(axes)//2][0].yaxis.set_label_coords(-0.15, 1.0)
+#            #axes[len(axes)//2][1].set_ylabel(r'density water (g/cm$^3$)')
+#            leg = axes[0][0].legend(loc=1,prop={'size':7},framealpha=1.0,facecolor='w')
+#            [axes[0][i].set_zorder(99) for i in range(1)]#2)]
+#            plt.subplots_adjust(hspace=0.0)
+#            writefig(filename+'_'+r, write_eps)
+
 #############################################################
 #############################################################
 #############################################################
 
-
-def _analyze_density(indens):
-    sdens = deepcopy(indens)
-    # delta ind for 5 AA
-    id5 = np.where(sdens['binc']-sdens['binc'][0] > 2.0)[0][0]
-    # primitive identification of 1st peak density
-    dat = {}
-    dh2o = {'Ow':1/18., 'Hw':2/18.}
-    for wk in ['Ow', 'Hw']:
-        ipk = sdens[wk].argmax()
-        ilay = ipk+sdens[wk][ipk:ipk+id5].argmin()
-        # integrate # of H2O
-        igr = np.trapz(sdens[wk][:ilay], sdens['binc'][:ilay])
-        dat.update({wk:[ilay, ipk, igr/dh2o[wk]]})
-        # peak onset
-        #print(wk, sdens['binc'][np.where(sdens[wk] != 0.0)[0][0]] - sdens['binc'][0])
-    return(dat)
-
-def _isolate_pk(sdens,ipk,k):
-    x = sdens['binc'][ipk]-sdens['binc'][0]
-    y = sdens[k][ipk]
-    return(np.array([x,y]))
-
-def plot_density_fancy(filename, folders):
-    colors = {'Ow':'r','Hw':'c'}; tshift = {'Ow':0.7, 'Hw':-1.7}; dy = -0.03
-    surftag = {'Cu111': 'Cu(111)', 'Cu211':'Cu(211)', 'Au111':'Au(111)', \
-        'Pt111': 'Pt(111)', 'Cu211-6x4':'Cu(211)', 'Cu211-3x4':'Cu(211)', 'Pt111-6x4':'Pt(111)'}
-    dh2o = {'Ow':1/18., 'Hw':2/18.}
-    
-    ref = _sort_sub_runs(folders)
-    r = list(ref.keys())[0]
-
-    # make density
-    sdens = _av_dens(folders)
-    
-    # for normalization
-    aa = read(r+'_02/POSCAR')
-    Acell = aa.get_volume()/aa.get_cell()[2,2]
-            
-    _set_plotting_env(width=3.37,height=3.37/ golden_ratio,\
-                   lrbt=[0.18,0.95,0.20,0.95],fsize=9.0)
-    fig, ax = plt.subplots(1,1)
-    axes = _plot_density(sdens['binc'], {k:sdens[k] for k in sdens if k != 'binc'}, ax=ax)
-    axes[0].annotate(r'%s'%surftag[r.split('_')[0]], xy=(0.45,0.7), xycoords='axes fraction',size=9)
-            
-    dpk = _analyze_density(sdens)
-    print(50*'#')
-    print(r, [[k, sdens['binc'][dpk[k][1]]-sdens['binc'][0], dpk[k][2]] for k in dpk])
-
-    # determine average density of clean sample
-    x0 = sdens['binc'][0]
-    iwl = np.where(sdens['binc']-x0 > 9)[0][0]
-    ist = np.where(sdens['Ow'] > 1e-2)[0][0] #onset of noticable density
-    dens = np.trapz(sdens['Ow'][:iwl], sdens['binc'][:iwl]) / (9.0-(sdens['binc'][ist]-x0)) 
-    dens /= dh2o['Ow']
-    print('average density %s excluding vacuum interface: %.2f'%(r, dens))
-    
-    lim_int = [dpk[k][0] for k in dpk]
-    lim_int = int(np.mean(lim_int))
-    
-    nfac = {'Ow':1.0, 'Hw':2.0}
-    for k in dpk: #plot first layer
-        axes[0].fill_between(sdens['binc'][:lim_int]-sdens['binc'][0], 0, sdens[k][:lim_int], color=colors[k], alpha=0.3)
-        pxy = _isolate_pk(sdens,dpk[k][1],k)
-        ist = np.where(sdens[k] > 1e-2)[0][0] #onset of noticable density
-        Nh2o = dh2o[k]*(sdens['binc'][lim_int]-sdens['binc'][ist])*1e-8 #normalization of water density
-        Nnum = 1e-9 # unit 1e-9 mol/cm2
-        Ncell = Acell * (1e-8**2.0) # unit-cell area in cm2
-        Navg = 6.02214e23
-        igr = np.trapz(sdens[k][:lim_int], sdens['binc'][:lim_int]*1e-8) * Ncell *Navg / nfac[k] # / Nnum #Nh2o
-        axes[0].annotate(r'%.1f'%igr, xy=pxy+np.array([tshift[k]/10.0,dy]), xytext=pxy+np.array([tshift[k], -0.01]), size=8, color=colors[k],
-            arrowprops=dict(arrowstyle="-",connectionstyle="arc",color=colors[k]))
-    # make pretty
-    axes[0].set_xlabel(r'z ($\mathrm{\AA}$)')
-    axes[0].set_ylabel(r'density (mol/cm$^3$)')
-    leg = axes[0].legend(loc=1,prop={'size':7},framealpha=1.0,facecolor='w')
-    [axes[i].set_zorder(99) for i in range(1)]#2)]
-    writefig(filename)
- 
-def _process_densities(filename, folders, write_eps=False):
-    surftag = {'Cu111': 'Cu(111)', 'Cu211':'Cu(211)', 'Au111':'Au(111)', \
-        'Pt111': 'Pt(111)', 'Cu211-6x4':'Cu(211)', 'Cu211-3x4':'Cu(211)', 'Pt111-6x4':'Pt(111)'}
-    colors = {'Ow':'r','Hw':'c'}; tshift = {'Ow':0.7, 'Hw':-1.7}; dy = -0.03; #tshift = {'Ow':0.7, 'Hw':-1.5}; dy = -0.05
-    # presort keys
-    aorder = ['CO','CHO','COH','OCCHO','OH','OOH']
-    ads = [k for k in folders if np.any([k.find(m) != -1 for m in aorder])]
-    ads = _sort_sub_runs(ads)
-    ref = [k for k in folders if np.all([k.find(m) == -1 for m in aorder])]
-    ref = _sort_sub_runs(ref)
-
-    # fine-tuning
-    i_shift = {'Cu211_15H2O':2}; txshift = {'Pt111_24H2O':np.array([0.15,-0.03]), 'Cu211_15H2O':np.array([0.2,0.0])}
-    
-    dh2o = {'Ow':1/18., 'Hw':2/18.}
-    
-    # all densities sampled from 5e3 onward
-    for r in ref:
-        aa = read(r+'_02/POSCAR')
-        Acell = aa.get_volume()/aa.get_cell()[2,2]
-        rads = [a for a in ads if '_'.join(a.split('_')[:-1]) == r]
-        rads = [r+'_'+a for a in aorder if r+'_'+a in rads]
-        if len(rads) > 0:
-            # avering densities
-            sdens = _av_dens(ref[r])
-            
-            _set_plotting_env(width=3.37,height=3.37/ golden_ratio *1.5,\
-                           lrbt=[0.18,0.95,0.15,0.95],fsize=9.0)
-            if r == 'Cu211_15H2O':
-                _set_plotting_env(width=3.37,height=3.37/ golden_ratio *1.8,\
-                               lrbt=[0.18,0.95,0.12,0.98],fsize=9.0)
-
-            #fig, axes = plt.subplots(len(ref[r])+1,1)#,figsize=np.array([6.4,4.8])*nplot/6.0)
-            fig, axes = plt.subplots(len(rads)+1,1)#,figsize=np.array([6.4,4.8])*nplot/6.0)
-            axes[0] = _plot_density(sdens['binc'], {k:sdens[k] for k in sdens if k != 'binc'}, ax=axes[0])
-            axes[0][0].annotate(r'%s'%surftag[r.split('_')[0]], xy=(0.45,0.7), xycoords='axes fraction',size=9)
-            
-            dpk = _analyze_density(sdens)
-            print(50*'#')
-            print(r, [[k, sdens['binc'][dpk[k][1]]-sdens['binc'][0], dpk[k][2]] for k in dpk])
-
-            # determine average density of clean sample
-            x0 = sdens['binc'][0]
-            iwl = np.where(sdens['binc']-x0 > 9)[0][0]
-            ist = np.where(sdens['Ow'] > 1e-2)[0][0] #onset of noticable density
-            dens = np.trapz(sdens['Ow'][:iwl], sdens['binc'][:iwl]) / (9.0-(sdens['binc'][ist]-x0)) 
-            dens /= dh2o['Ow']
-            print('average density %s excluding vacuum interface: %.2f'%(r, dens))
-
-            dpk_ads = {ra:_analyze_density(_av_dens(ads[ra])) for ra in rads}
-            lim_int = [dpk[k][0] for k in dpk] + [dpk_ads[ra][k][0] for ra in dpk_ads for k in dpk_ads[ra]]
-            lim_int = int(np.mean(lim_int))
-            if r in i_shift:
-                lim_int += i_shift[r]
-            
-            txs = np.zeros(2)
-            if r in txshift:
-                txs = txshift[r]
-            
-            nfac = {'Ow':1.0, 'Hw':2.0}
-            for k in dpk: #plot first layer
-                axes[0][0].fill_between(sdens['binc'][:lim_int]-sdens['binc'][0], 0, sdens[k][:lim_int], color=colors[k], alpha=0.3)
-                #axes[0][0].fill_between(sdens['binc'][:dpk[k][0]]-sdens['binc'][0], 0, sdens[k][:dpk[k][0]], color=colors[k], alpha=0.3)
-                pxy = _isolate_pk(sdens,dpk[k][1],k)
-                ist = np.where(sdens[k] > 1e-2)[0][0] #onset of noticable density
-                Nh2o = dh2o[k]*(sdens['binc'][lim_int]-sdens['binc'][ist])*1e-8 #normalization of water density
-                Nnum = 1e-9 # unit 1e-9 mol/cm2
-                Ncell = Acell * (1e-8**2.0) # unit-cell area in cm2
-                Navg = 6.02214e23
-                #igr = np.trapz(sdens[k][:lim_int], sdens['binc'][:lim_int]) / dh2o[k]
-                igr = np.trapz(sdens[k][:lim_int], sdens['binc'][:lim_int]*1e-8) * Ncell *Navg / nfac[k] # / Nnum #Nh2o
-                #axes[0][0].annotate(r'%.1f'%dpk[k][2], xy=pxy+np.array([tshift[k]/4.0,dy]), xytext=pxy+np.array([tshift[k], -0.01]), size=8, color=colors[k],
-                axes[0][0].annotate(r'%.1f'%igr, xy=pxy+np.array([tshift[k]/10.0,dy]), xytext=pxy+np.array([tshift[k], -0.01])+txs, size=8, color=colors[k],
-                    arrowprops=dict(arrowstyle="-",connectionstyle="arc",color=colors[k]))
-
-            n = 1
-            for ra in rads:
-                radens = _av_dens(ads[ra])
-                axes[n] = _plot_density(radens['binc'], {k:radens[k] for k in radens if k != 'binc'}, ax=axes[n])
-                axes[n][0].annotate(r'%s'%ra.split('_')[-1], xy=(0.45,0.7), xycoords='axes fraction',size=9)
-            
-                dpk = _analyze_density(radens)
-                print(ra, [[k, sdens['binc'][dpk[k][1]]-sdens['binc'][0], dpk[k][2]] for k in dpk])
-                for k in dpk: #plot first layer
-                    axes[n][0].fill_between(radens['binc'][:lim_int]-radens['binc'][0], 0, radens[k][:lim_int], color=colors[k], alpha=0.3)
-                    #axes[n][0].fill_between(radens['binc'][:dpk[k][0]]-radens['binc'][0], 0, radens[k][:dpk[k][0]], color=colors[k], alpha=0.3)
-                    pxy = _isolate_pk(sdens,dpk[k][1],k)
-                    ist = np.where(radens[k] > 1e-2)[0][0] #onset of noticable density
-                    Nh2o = dh2o[k]*(radens['binc'][lim_int]-radens['binc'][ist])*1e-8 #normalization of water density
-                    Nnum = 1e-9 # unit 1e-9 mol/cm2
-                    if ra.find('COH') != -1 and k == 'Hw':
-                        pxy = np.array([2.0,0.15])
-                    #igr = np.trapz(radens[k][:lim_int], radens['binc'][:lim_int]) / dh2o[k]
-                    #igr = np.trapz(radens[k][:lim_int], radens['binc'][:lim_int]*1e-8) / Nnum #Nh2o
-                    igr = np.trapz(radens[k][:lim_int], radens['binc'][:lim_int]*1e-8) * Ncell *Navg / nfac[k] # / Nnum #Nh2o
-                    #axes[n][0].annotate(r'%.1f'%dpk[k][2], xy=pxy+np.array([tshift[k]/4.0,dy]), xytext=pxy+np.array([tshift[k], -0.01]), size=8, color=colors[k],
-                    axes[n][0].annotate(r'%.1f'%igr, xy=pxy+np.array([tshift[k]/10.0,dy]), xytext=pxy+np.array([tshift[k], -0.01])+txs, size=8, color=colors[k],
-                        arrowprops=dict(arrowstyle="-",connectionstyle="arc",color=colors[k]))
-                
-                n += 1
-            print(50*'#')
-           #n = 1
-           #for sub in ref[r]:
-           #    # load and adjust size to metal
-           #    denspkl = '%s/density_dat.pkl'%sub
-           #    dens = _load_pickle_file(denspkl)
-           #    dens['binc'], dens['hist_dicts'] = _adjust_density_to_metal(\
-           #        dens['binc'], dens['hist_dicts'], sub[:2])
-           #    axes[n] = _plot_density(dens['binc'], dens['hist_dicts'], ax=axes[n])
-           #    n += 1
-            
-            # make pretty
-            #for s in range(2):
-            for s in range(1):
-                #lims = np.array([list(ax[s].get_ylim()) for ax in axes])
-                #mlims = (lims[:,0].min(),lims[:,1].max())
-                lims = np.array([list(ax[s].get_xlim()) for ax in axes])
-                #mlims = (lims[:,0].min(),lims[:,1].min())
-                mlims = (0.0,lims[:,1].min())
-                [ax[s].set_xlim(mlims) for ax in axes]
-                [ax[s].set_ylim(0.0,0.27) for ax in axes]
-            if r == 'Cu211_15H2O':
-                [ax[0].yaxis.set_major_locator(MultipleLocator(0.1)) for ax in axes]
-            [axes[i][0].set_xticklabels([]) for i in range(len(axes)-1)]
-            axes[-1][0].set_xlabel(r'z ($\mathrm{\AA}$)')
-            axes[len(axes)//2][0].set_ylabel(r'density (mol/cm$^3$)')
-            if len(axes)%2 == 0:
-                axes[len(axes)//2][0].yaxis.set_label_coords(-0.12, 1.0)
-            #axes[len(axes)//2][0].yaxis.set_label_coords(-0.15, 1.0)
-            #axes[len(axes)//2][1].set_ylabel(r'density water (g/cm$^3$)')
-            leg = axes[0][0].legend(loc=1,prop={'size':7},framealpha=1.0,facecolor='w')
-            [axes[0][i].set_zorder(99) for i in range(1)]#2)]
-            plt.subplots_adjust(hspace=0.0)
-            writefig(filename+'_'+r, write_eps)
     
 def plot_msd_individual(filename, msd_dat, write_eps=False):
     _set_plotting_env(width=3.37,height=3.37/ golden_ratio, # *1.5,\

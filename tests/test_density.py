@@ -3,6 +3,7 @@ import unittest
 import numpy as np
 from simsoliq.io import init_mdtraj
 from simsoliq.mdtraj_average import average_densities
+from simsoliq.analyze.density import isolate_solvent_density, get_peak_integral, get_average_solvent_bulk_density
 
 
 class TestDensity(unittest.TestCase):
@@ -43,5 +44,19 @@ class TestDensity(unittest.TestCase):
         for key in hists:
             self.assertEqual(np.where(hists[key] != 0.0)[0].size, out_compare[key])
 
+    def test_analyze_density(self):
+        trj = init_mdtraj("../tests/data/Pt111_24H2O_OH_long/vasprun.xml")
+        densdata = trj.get_density_profile(height_axis=2, savepkl=True)
+
+        # truncation of density
+        dens = isolate_solvent_density(densdata)
+
+        # integrals of first peaks
+        dint_m = get_peak_integral(dens, xlim=None) # minimum after first maximum
+        self.assertEqual(np.around(dint_m['Osolv'][1],12), 0.000000001541)
+        
+        Acell = trj.get_cell_area() # required cell area
+        dint_n = get_peak_integral(dens, xlim=None, Acell=Acell)
+        self.assertEqual(np.around(dint_n['Osolv'][1],5), 7.46394)
 
 

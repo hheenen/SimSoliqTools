@@ -143,6 +143,28 @@ class MDtraj(DataMDtraj):
         return(self.mdtraj_atoms)
 
 
+    def get_cell_area(self, height_axis=2):
+        """
+          method to return area of simulation cell perpendicular to 
+          surface normal
+ 
+          Parameters
+          ----------
+          height_axis : int
+            direction of surface normal
+ 
+          Returns
+          -------
+          area : float
+            area in Angstrom^2
+        
+        """
+        traj0 = self.get_single_snapshot()
+        ha = height_axis
+        area = traj0.get_volume()/traj0.cell[ha,ha]
+        return(area)
+
+
     def get_density_profile(self, height_axis=2, tstart=0, savepkl=True):
         """
           method to return average density profile of trajectory
@@ -187,6 +209,8 @@ class MDtraj(DataMDtraj):
         
         """
         solv = self._get_solvent_indices(snapshot=0)
+        
+        self._retrieve_atom_data()
         traj = self.mdtraj_atoms
  
         # indices of solvent 
@@ -267,10 +291,6 @@ class MDtraj(DataMDtraj):
         """
         # NOTE: could be robuster by including type of coordinating
         #       ion and find a better method than rcut
-       #if snapshot > 0:
-       #    self._retrieve_atom_data(self.safe_asetraj_files)
-       #    atoms = self.mdtraj_atoms[snapshot]
-       #else:
         atoms = self.get_single_snapshot(snapshot)
         pos = atoms.get_scaled_positions()
         cell = atoms.get_cell()

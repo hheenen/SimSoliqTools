@@ -122,7 +122,7 @@ def average_densities(mdtraj_list, height_axis=2, tstart=0):
             esub = [symbols[i] for i in mdsub.get_substrate_types()]
             if len(esub) > 1:
                 raise NotImplementedError("multi-elemental substrate found")
-            dens = adjust_density_to_substrate(dens, esub[0])
+            dens = align_density_to_substrate(dens, esub[0])
             
             # update av_dens with bin centers
             if len(av_dens['binc']) == 0:
@@ -142,15 +142,15 @@ def average_densities(mdtraj_list, height_axis=2, tstart=0):
     return(comp_dens)
 
 
-def adjust_density_to_substrate(dens, esub):
+def align_density_to_substrate(dens, esub):
     """
-      helper function to align density histogram to substrate
+      helper function to align density histogram including substrate
     """
     # find where substrate is in density profile
     indm = np.where(dens['hists'][esub] != 0.0)[0]
-    dens['binc'] = dens['binc'][indm[-1]+1:]
+    dens['binc'] = dens['binc'][indm[0]:]
     for k in dens['hists']:
-        dens['hists'][k] = dens['hists'][k][indm[-1]+1:]
+        dens['hists'][k] = dens['hists'][k][indm[0]:]
     return(dens)
 
 

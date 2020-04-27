@@ -187,7 +187,7 @@ def _plot_xe_vs_time(filename,dat,label,yfunc,tstart=1e3,tunit='ps'):
 #############################################################################
 
 
-def plot_density(filename, binc, hist_dicts, dens=False):
+def plot_density(filename, binc, hist_dicts, integral={}, dens=False):
     """
       funtion to plot the density profile for individual or
       averaged trajectories 
@@ -200,6 +200,8 @@ def plot_density(filename, binc, hist_dicts, dens=False):
         bin centers of density histogram (height)
       hist_dicts : dict
         dictionary including each elements density histrogram
+      integral : dict
+        values to plot shaded region for integral
       dens : bool
         option to plot the density (water)
 
@@ -208,7 +210,7 @@ def plot_density(filename, binc, hist_dicts, dens=False):
                    lrbt=[0.18,0.88,0.25,0.95],fsize=9.0)
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    ax, ax2 = _plot_density(binc, hist_dicts, ax, dens)
+    ax, ax2 = _plot_density(binc, hist_dicts, ax, integral, dens)
     if ax2 != None:
         ax2.set_ylabel(r'density water (g/cm$^3$)')
     
@@ -220,7 +222,7 @@ def plot_density(filename, binc, hist_dicts, dens=False):
     writefig(filename)
 
 
-def _plot_density(binc, hist_dicts, ax, dens=False, \
+def _plot_density(binc, hist_dicts, ax, integral={}, dens=False, \
     labels={'Osolv':'Ow', 'Hsolv':'Hw'}):
     """
       function to populate axis object, density is hardcoded
@@ -234,8 +236,14 @@ def _plot_density(binc, hist_dicts, ax, dens=False, \
     for el in hist_dicts:
         nz = np.where(hist_dicts[el] != 0.0)[0]
         if nz.size != 0:
-            ax.plot(binc[nz]-binc[0], hist_dicts[el][nz], ls='-',\
+            ax.plot(binc[nz], hist_dicts[el][nz], ls='-',\
                 color=colors[el], label=r'%s'%labels[el])
+        if el in integral:
+            indi = np.where(binc >= integral[el][0])[0][0]
+            ax.fill_between(binc[nz[0]:indi], hist_dicts[el][nz[0]:indi], color=colors[el], alpha=0.3)
+            xy = [binc[indi], hist_dicts[el][indi]]; xytext = [xy[0]+2.0, xy[1] + 0.05]
+            ax.annotate(r'%.1e'%integral[el][1], xy=xy, xytext=xytext, size=8, color=colors[el],
+                arrowprops=dict(arrowstyle="-",connectionstyle="arc",color=colors[el]))
     hlim = np.array(ax.get_xlim()); d = hlim[1]-hlim[0]; hlim[0] += 0.2*d; hlim[1] -= 0.2*d
     
     if dens: # probably to be taken out

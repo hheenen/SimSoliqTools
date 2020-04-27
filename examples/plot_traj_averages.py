@@ -43,16 +43,3 @@ if __name__ == "__main__":
         surftag = {}, tstart=0.5, tunit='ps', **timedat)
     ###################################################################
 
-    
-    
-    ###################################################################
-    # average densities of two trajectories, `average_densities` 
-    # will return an average per composition 
-    # (only one composition included here)
-    av_dens = average_densities([trj1, trj2], tstart=0)
-    for comp in av_dens:
-        binc = av_dens[comp]['binc']
-        hist = av_dens[comp]['hists']
-        plot_density('density_average_%s'%comp, binc, hist)
-    ###################################################################
-
