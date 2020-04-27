@@ -11,6 +11,7 @@ import os, subprocess
 import numpy as np
 from shutil import copyfile
 from ase.io import read, write
+from ase.build import sort
 from ase.calculators import vasp
 from simsoliq.mdtraj import MDtraj
 from simsoliq.io.utils import _unpack_files, lines_key
@@ -174,13 +175,43 @@ def _prep_vasp_singlepiont(cpath, bpath, atoms, **kwarks):
     """
     # only prepare if path does not contain converged singlepoint
     if not _converged_singlepoint(cpath):
+        atoms = sort(atoms, tags=atoms.get_atomic_numbers())
         write(cpath+"/POSCAR",atoms)
-        copyfile(bpath+"/POTCAR",cpath+"/POTCAR")
+        grep_PAW_POTCAR(bpath+"/POTCAR", cpath+'/POTCAR', atoms)
         copyfile(bpath+"/KPOINTS",cpath+"/KPOINTS")
         write_incar(cpath+"/INCAR", kwarks) # could be more clever
         return(True)
     else:
         return(False)
+
+
+def grep_PAW_POTCAR(fpot, fout, atoms):
+    """ 
+      helper-function to extract PAW potentials for atoms object
+    
+    """
+    # set up element to search PAW for
+    el_list = []
+    for e in atoms.get_chemical_symbols():
+        if len(el_list) == 0 or e != el_list[-1]:
+            el_list.append(e)
+    
+    with open(fpot, 'r') as pfile:
+        lines = pfile.readlines()
+
+    # grep lines from POTCAR
+    ldat = {}
+    for l in range(len(lines)):
+        if len(lines[l].split()) > 0 and lines[l].split()[0] == 'PAW_PBE':
+            n = 0
+            while lines[l+n].find('End of Dataset') == -1:
+                n += 1
+            ldat.update({lines[l].split()[1]:lines[l:l+n+1]})
+
+    # write lines in OUtFILE
+    with open(fout, 'w') as outfile:
+        for el in el_list:
+            outfile.write(''.join(ldat[el]))
 
 
 def write_incar(fincar, keys):
