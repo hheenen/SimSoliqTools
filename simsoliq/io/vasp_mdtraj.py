@@ -386,6 +386,7 @@ def get_charge_density(f):
     
     """
     # read CHGCAR
+    _unpack_files(f,['CHGCAR']) #in case its packed
     filename = f+'/CHGCAR'
     if not os.path.isfile(filename):
         raise IOError("no CHGCAR found in %s"%f)
