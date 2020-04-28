@@ -250,7 +250,8 @@ class DataMDtraj(object):
             if td not in sp_data:
                 dat = dfunc(sp_path+'/'+sub, **kwargs)
                 sp_data.update({td:dat})
-        write_pickle_file(pklfile, sp_data)
+        if safe_pkl_files:
+            write_pickle_file(pklfile, sp_data)
         return(sp_data)
 
 
