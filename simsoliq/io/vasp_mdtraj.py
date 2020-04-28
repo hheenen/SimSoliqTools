@@ -33,6 +33,7 @@ def read_mdtraj_vasp(fpath, fname, **kwargs):
     mdtraj.fefunc_sp = get_sp_efermi
     mdtraj.vacefunc_sp = get_sp_vacpot
     mdtraj.wffunc_sp = get_vasp_wf
+    mdtraj.chgfunc_sp = get_charge_density
 
     return(mdtraj)
 
@@ -377,5 +378,62 @@ def _determine_vacuum_reference(d0, atoms, gtol=1e-3):
     ibfe = ibfe[-1]%d0.size; iafr = iafr[0]%d0.size
     
     return([ibfe, iafr])
+
+
+def get_charge_density(f):
+    """ 
+      helper-function to read a CHGCAR and return its electron density
+    
+    """
+    # read CHGCAR
+    filename = f+'/CHGCAR'
+    if not os.path.isfile(filename):
+        raise IOError("no CHGCAR found in %s"%f)
+
+    chg = _read_vasp_chgcar_density(filename)
+
+    return(chg)
+
+
+def _read_vasp_chgcar_density(filename):
+    """
+    Helper function to read CHGCAR 
+    
+    """
+    f = open(filename,'r')
+    lines = f.readlines()
+    f.close()
+    
+    #get unit cell volume
+    a = np.array([float(lines[2].split()[i]) for i in range(3)])
+    b = np.array([float(lines[3].split()[i]) for i in range(3)])
+    c = np.array([float(lines[4].split()[i]) for i in range(3)])
+    V = np.dot(np.cross(b,c),a)
+    
+    #get header length and find nx, ny, nz
+    for i,line in enumerate(lines):
+        if len(line.strip()) == 0:
+            break
+    i += 1
+    line = lines[i]
+    vox_n = np.array([int(line.split()[j]) for j in range(3)])
+    n_tot = vox_n[0]*vox_n[1]*vox_n[2]
+    i += 1
+    
+    #find footer length
+    for k in range(len(lines)):
+        if lines[-k].split()[0] == 'augmentation' and lines[-k].split()[2] == '1':
+            break
+    
+    #and return the xy-averaged electron density at the specified z value
+    density = np.genfromtxt(filename,skip_header=i,skip_footer=k,invalid_raise=False)
+    density = np.reshape(density,density.size)
+    if density.size < n_tot:
+        for chg in lines[-k-1].split():
+            density = np.append(density,float(chg))
+    density = np.reshape(density,vox_n,order='F')
+    density /= n_tot
+    
+    return density
 
 

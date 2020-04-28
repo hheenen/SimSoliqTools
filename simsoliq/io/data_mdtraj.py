@@ -67,6 +67,7 @@ class DataMDtraj(object):
         self.fefunc_sp = None
         self.vacefunc_sp = None
         self.wffunc_sp = None
+        self.chgfunc_sp = None
 
         # handling of file-iterators
         self.concmode = concmode
@@ -213,7 +214,7 @@ class DataMDtraj(object):
             tag for the singlepoint calculation folder singlepoints_`tag`
           dkey : str
             key to determine function for data read-out
-            options include: 'epot', 'efermi', 'evac', 'wf'
+            options include: 'epot', 'efermi', 'evac', 'wf', 'dchg'
 
           Returns
           -------
@@ -230,7 +231,8 @@ class DataMDtraj(object):
 
         # choose singlepoint data-retrieval function
         fspdict = {'epot':self.efunc_sp, 'efermi':self.fefunc_sp, \
-            'evac':self.vacefunc_sp, 'wf':self.wffunc_sp}
+            'evac':self.vacefunc_sp, 'wf':self.wffunc_sp, \
+            'dchg':self.chgfunc_sp}
         if dkey in fspdict:
             dfunc = fspdict[dkey]
         else:

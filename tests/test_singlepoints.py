@@ -24,4 +24,9 @@ class TestSinglepoints(unittest.TestCase):
         evac = a.vacefunc_sp("data/Pt111_24H2O_x/singlepoints_wf/sp_step00000")
         self.assertEqual(np.around(evac, 5), np.around(4.2471160283258795, 5))
 
+    def test_readout_charge_density(self):
+        a = init_mdtraj("data/Pt111_24H2O_x/vasprun.xml", fmat='vasp', concmode='nested', fnest='restart')
+        dchg = a.chgfunc_sp("data/Pt111_24H2O_x/singlepoints_wf/sp_step00000")
+        self.assertEqual(np.around(dchg.sum(),13),552.0000139832506)
+
 
