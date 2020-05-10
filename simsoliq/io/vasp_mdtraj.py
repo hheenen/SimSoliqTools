@@ -34,6 +34,7 @@ def read_mdtraj_vasp(fpath, fname, **kwargs):
     mdtraj.vacefunc_sp = get_sp_vacpot
     mdtraj.wffunc_sp = get_vasp_wf
     mdtraj.chgfunc_sp = get_charge_density
+    mdtraj.elpot_sp = get_elpot_vasp
 
     return(mdtraj)
 
@@ -307,8 +308,7 @@ def get_sp_vacpot(sp_path, **kwargs):
     d0, atoms = _read_potential_vasp(sp_path)
     ind_vac = _determine_vacuum_reference(d0, atoms, **kwargs)
 
-    # by default take refernce `before` dipole correction (higher z-coordinate)
-    ind_vac = ind_vac[0]
+    #ind_vac = ind_vac[0] #take both values: `before` and `after`
 
     ref_vac = d0[ind_vac]
     return(ref_vac)
@@ -324,8 +324,21 @@ def get_vasp_wf(sp_path, **kwargs):
     ef = get_sp_efermi(sp_path)
     evac = get_sp_vacpot(sp_path, **kwargs)
     
+    # by default take refernce `before` dipole correction (higher z-coordinate)
+    evac = evac[0]
+    
     wf = evac - ef
     return(wf)
+
+
+def get_elpot_vasp(sp_path):
+    """ 
+      helper-function to return electrostatic potential from OUTCAR and LOCPOT
+      hardcoded to z-axis
+    
+    """
+    d0, atoms = _read_potential_vasp(sp_path)
+    return(d0)
 
 
 def _read_potential_vasp(f):
@@ -392,6 +405,9 @@ def get_charge_density(f):
         raise IOError("no CHGCAR found in %s"%f)
 
     chg = _read_vasp_chgcar_density(filename)
+   #c=vasp.VaspChargeDensity(filename=filename)
+   #c.read(filename=filename)
+   #chg = c.chg[0]*c.atoms.get_volume()/c.chg[0].size #units == e per voxel
 
     return(chg)
 

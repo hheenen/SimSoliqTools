@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 
+import numpy as np
+
 from simsoliq.io import init_mdtraj
+from simsoliq.plotting.standard_plots import plot_profile
 
 def print_singlepoint_data(key, data):
     outtxt = 5*"#" + " singlepoint data: {:>5} ".format(key) + 5*"#" + "\n"
@@ -23,6 +26,7 @@ if __name__ == "__main__":
     ###     (3) vacumm potential                                   ###
     ###     (4) workfunction                                       ###
     ###     (5) charge density                                     ###
+    ###     (6) electrostatic potential and plot                   ###
     ##################################################################
     
     # read MD_data path
@@ -53,5 +57,15 @@ if __name__ == "__main__":
     print("electrons in charge density: ")
     print(", ".join(["step%i: %.3f"%(k, sp_chg[k].sum()) for k in sp_chg]))
 
+    # (6) electrostatic potential and plot
+    potel = a.read_singlepoint_calculations('elpot', timesteps=[2]) # read only 1 timestep
+    atoms = a.get_single_snapshot(0) # for z coordinate
+    
+    #     make plot
+    y = potel[2]
+    x = np.linspace(0,atoms.get_cell()[2,2],y.size+1)[:-1]
+    xmark = [x[np.where(y == y0)[0][0]] for y0 in sp_evac[2]] # add mark vac
+    plot_profile('elpot_%s'%a.get_traj_composition(), x, y, \
+        xmarkings=xmark, ylabel='potential (eV)', xlabel=r'surface normal ($\AA$)')
 
 

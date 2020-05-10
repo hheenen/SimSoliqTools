@@ -264,3 +264,48 @@ def _plot_density(binc, hist_dicts, ax, integral={}, dens=False, \
 #############################################################################
 
 
+#############################################################################
+################# miscellaneous plotting functions        ###################
+#############################################################################
+
+def plot_profile(filename, x, y, vertline=0.0, xmarkings=[], xlim=None, \
+    ylabel='', xlabel=''):
+    """
+      funtion to plot the any generic profile i.e. electrostatic potential
+      
+      Parameters
+      ----------
+      filename : string
+        name of the produced figure (without extention)
+      x : list/array
+        x values for profile
+      y : list/array
+        y values for profile
+      vertline : float, optional
+        where to draw a vertical line and define a new `zero`
+      xlim : tuple, optional
+        limit for x-values
+      ylabel/xlabel : str
+        axis labels
+
+    """
+    set_plotting_env(width=3.37,height=3.37/ golden_ratio,
+                   lrbt=[0.2,0.95,0.2,0.95],fsize=9.0)
+    
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    # plot curve
+    ax.plot(x-vertline, y, color='k')
+
+    # axis labels
+    ax.set_ylabel(ylabel)
+    ax.set_xlabel(xlabel)
+
+    ax.axvline(0.0, ls='--', color='k')
+    for x in xmarkings:
+        ax.axvline(x, ls=':', color='k')
+    if xlim != None:
+        ax.set_xlim(xlim)
+
+    writefig(filename)
+

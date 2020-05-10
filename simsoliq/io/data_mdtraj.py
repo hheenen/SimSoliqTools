@@ -68,6 +68,7 @@ class DataMDtraj(object):
         self.vacefunc_sp = None
         self.wffunc_sp = None
         self.chgfunc_sp = None
+        self.elpot_sp = None
 
         # handling of file-iterators
         self.concmode = concmode
@@ -203,7 +204,7 @@ class DataMDtraj(object):
  
 
     def read_singlepoint_calculations(self, dkey, tag='', \
-        safe_pkl_files=True, **kwargs):
+        safe_pkl_files=True, timesteps=[], dfunc=None, **kwargs):
         """
           method to read single point calculations on snapshots of the 
           trajectory. 
@@ -214,7 +215,12 @@ class DataMDtraj(object):
             tag for the singlepoint calculation folder singlepoints_`tag`
           dkey : str
             key to determine function for data read-out
-            options include: 'epot', 'efermi', 'evac', 'wf', 'dchg'
+            options include: 'epot', 'efermi', 'evac', 'wf', 'dchg', 'elpot'
+          timesteps : list, optional
+            list of timesteps which are read out, if empty all are read
+          dfunc : function, optional
+            function to read out data from singlepoint
+            not needed if standard key is invoked
 
           Returns
           -------
@@ -229,13 +235,17 @@ class DataMDtraj(object):
         sp_sub = [f for f in os.listdir(sp_path) \
             if os.path.isdir(sp_path+'/'+f)]
 
+        # setup timesteps if none given
+        if len(timesteps) == 0:
+            timesteps = [int(s.split('_')[1][4:]) for s in sp_sub]
+
         # choose singlepoint data-retrieval function
         fspdict = {'epot':self.efunc_sp, 'efermi':self.fefunc_sp, \
             'evac':self.vacefunc_sp, 'wf':self.wffunc_sp, \
-            'dchg':self.chgfunc_sp}
+            'dchg':self.chgfunc_sp, 'elpot':self.elpot_sp}
         if dkey in fspdict:
             dfunc = fspdict[dkey]
-        else:
+        elif dfunc == None:
             raise NotImplementedError("unknown dkey")
 
         # find previously stored data
@@ -247,7 +257,7 @@ class DataMDtraj(object):
         # iterate singlepoint folders
         for sub in sp_sub:
             td = int(sub.split('_')[1][4:])
-            if td not in sp_data:
+            if td not in sp_data and td in timesteps:
                 dat = dfunc(sp_path+'/'+sub, **kwargs)
                 sp_data.update({td:dat})
         if safe_pkl_files:
