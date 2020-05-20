@@ -9,6 +9,7 @@ input to be inherited by an mdtraj object
 
 import os, subprocess
 import numpy as np
+from copy import deepcopy
 from shutil import copyfile
 from ase.io import read, write
 from ase.build import sort
@@ -177,9 +178,20 @@ def _prep_vasp_singlepiont(cpath, bpath, atoms, **kwarks):
     """
     # only prepare if path does not contain converged singlepoint
     if not _converged_singlepoint(cpath):
-        atoms = sort(atoms, tags=atoms.get_atomic_numbers())
-        write(cpath+"/POSCAR",atoms)
-        grep_PAW_POTCAR(bpath+"/POTCAR", cpath+'/POTCAR', atoms)
+        tags = atoms.get_tags()
+        if np.array_equal(tags,np.zeros(tags.size)):
+            raise Exception("need tags of original indeces")
+        
+        # make PAW_PBE tags - from original simulation
+        opaw_tags = grep_PAW_tags(bpath)
+        paw_tags = [opaw_tags[i] for i in tags]
+        labels = unique_order(paw_tags)
+        labels = [e[:-4] if e.find('.') != -1 else e for e in labels]
+        watoms = adjust_atom_types(atoms, paw_tags)
+        
+        #atoms = sort(atoms, tags=atoms.get_atomic_numbers()) # keep original order
+        write(cpath+"/POSCAR",watoms, label=' '+'  '.join(labels))
+        grep_PAW_POTCAR(bpath+"/POTCAR", cpath+'/POTCAR', paw_tags)
         copyfile(bpath+"/KPOINTS",cpath+"/KPOINTS")
         write_incar(cpath+"/INCAR", kwarks) # could be more clever
         return(True)
@@ -187,16 +199,83 @@ def _prep_vasp_singlepiont(cpath, bpath, atoms, **kwarks):
         return(False)
 
 
-def grep_PAW_POTCAR(fpot, fout, atoms):
+def adjust_atom_types(atoms, paw_tags):
+    """ 
+      helper-function to make paw-segmeted atoms object to write POSCAR
+    
+    """
+    # create new atoms object
+    watoms = deepcopy(atoms)
+    atno = watoms.get_atomic_numbers()
+    
+    # get unique paw tags
+    utags = unique_order(paw_tags); paw_tags = np.array(paw_tags)
+    
+    # make types for new atoms object -- according to paw potentials
+    wtypes = []
+    for i in range(len(utags)):
+        ind = np.where(paw_tags == utags[i])[0]
+        wtypes.append(np.unique(atno[ind])[0])
+    for i in range(1,len(wtypes)):
+        if wtypes[i] == wtypes[i-1]:
+            wtypes[i] = 0
+    watno = np.zeros(atno.size)
+    for i in range(len(utags)):
+        ind = np.where(paw_tags == utags[i])[0]
+        watno[ind] = wtypes[i]
+    watoms.set_atomic_numbers(watno)
+    return(watoms)
+
+    
+def grep_PAW_tags(bpath):
+    """ 
+      helper-function to extract original tags for PAW_potentials for each atom
+    
+    """
+    paw_order = grep_PAW_order(bpath+"/POTCAR")
+    paw_num = grep_PAW_dist(bpath+"/POSCAR")
+    paw_tags = []
+    for i in range(len(paw_num)):
+        paw_tags += [paw_order[i]] * paw_num[i]
+    paw_tags = np.array(paw_tags)
+    return(paw_tags)
+        
+
+def grep_PAW_dist(fpos):
+    """ 
+      helper-function to extract PAW numbers of POSCAR
+    
+    """
+    with open(fpos, 'r') as pfile:
+        lines = pfile.readlines()
+    nums = [int(s) for s in lines[5].split()]
+    return(nums)
+
+
+def grep_PAW_order(fpot):
+    """ 
+      helper-function to extract order of PAW potential
+    
+    """
+    with open(fpot, 'r') as pfile:
+        lines = pfile.readlines()
+    order = []
+    for l in range(len(lines)):
+        if len(lines[l].split()) > 0 and lines[l].split()[0] == 'PAW_PBE':
+            order.append(lines[l].split()[1])
+    return(order)
+
+
+def grep_PAW_POTCAR(fpot, fout, paw_identifier):
     """ 
       helper-function to extract PAW potentials for atoms object
     
     """
+    if type(paw_identifier) != list and type(paw_identifier) != np.ndarray:
+        paw_identifier = paw_identifier.get_chemical_symbols()
+    
     # set up element to search PAW for
-    el_list = []
-    for e in atoms.get_chemical_symbols():
-        if len(el_list) == 0 or e != el_list[-1]:
-            el_list.append(e)
+    el_list = unique_order(paw_identifier)
     
     with open(fpot, 'r') as pfile:
         lines = pfile.readlines()
@@ -214,6 +293,18 @@ def grep_PAW_POTCAR(fpot, fout, atoms):
     with open(fout, 'w') as outfile:
         for el in el_list:
             outfile.write(''.join(ldat[el]))
+
+
+def unique_order(indat):
+    """ 
+      helper-function to extract unique occurrences in order of list
+    
+    """
+    out = []
+    for e in indat:
+        if len(out) == 0 or e != out[-1]:
+            out.append(e)
+    return(out)
 
 
 def write_incar(fincar, keys):

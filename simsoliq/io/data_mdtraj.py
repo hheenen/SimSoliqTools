@@ -188,6 +188,9 @@ class DataMDtraj(object):
         if spatoms == None:
             self._retrieve_atom_data()
             spatoms = self.mdtraj_atoms
+            # tag atoms - this may be relevant to pseudopotentials
+            for i in range(len(spatoms)):
+                spatoms[i].set_tags(np.arange(len(spatoms[i]))) 
         else:
             assert len(spatoms) == self.mdtrajlen
 
