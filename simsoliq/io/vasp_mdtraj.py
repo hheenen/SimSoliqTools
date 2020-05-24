@@ -459,7 +459,7 @@ def _determine_vacuum_reference(d0, atoms, gtol=1e-3):
     # gtol == tolerance for when potential is 'converged'/flat in V/AA
     # vacuum region - first guess
     z=np.linspace(0,atoms.cell[2,2],len(d0))
-    z_vac = find_max_empty_space(atoms,edir=3)
+    z_vac = find_max_empty_space(atoms,edir=3)*atoms.cell[2,2]
     ind_vac = np.absolute(z - z_vac).argmin()
 
     # double potential for simpler analysis at PBC
