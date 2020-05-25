@@ -248,7 +248,11 @@ def grep_PAW_dist(fpos):
     """
     with open(fpos, 'r') as pfile:
         lines = pfile.readlines()
-    nums = [int(s) for s in lines[5].split()]
+    # lines of number of elements either in line 5 or 6
+    try:
+        nums = [int(s) for s in lines[5].split()]
+    except ValueError:
+        nums = [int(s) for s in lines[6].split()]
     return(nums)
 
 
