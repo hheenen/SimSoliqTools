@@ -119,7 +119,12 @@ def _read_vasp_atoms(wpath, fident, safe_asetraj_files=True):
     
     """
     
-    savedfile = wpath+'/mdtraj_atoms_%s.traj'%(fident.split('.')[0].lower())
+    # split fident if '/' case of nested_iterator
+    ftag = fident.split('.')[0].lower(); dtag = ''
+    if fident.find('/') != -1:
+        ftag = fident.split('.')[0].split('/')[-1].lower()
+        dtag = '/'.join(fident.split('/')[:-1]) +'/'
+    savedfile = wpath+'%s/mdtraj_atoms_%s.traj'%(dtag, ftag)
     
     # no saved file existing
     if not os.path.isfile(savedfile) or \
