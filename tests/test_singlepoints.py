@@ -22,7 +22,7 @@ class TestSinglepoints(unittest.TestCase):
     def test_readout_evac(self):
         a = init_mdtraj("data/Pt111_24H2O_x/vasprun.xml", fmat='vasp', concmode='nested', fnest='restart')
         evac = a.vacefunc_sp("data/Pt111_24H2O_x/singlepoints_wf/sp_step00000")
-        self.assertEqual(np.around(evac, 5), np.around(4.2471160283258795, 5))
+        self.assertTrue(np.array_equal(np.around(evac, 5), np.around([4.24711603, 4.56527316], 5)))
 
     def test_readout_charge_density(self):
         a = init_mdtraj("data/Pt111_24H2O_x/vasprun.xml", fmat='vasp', concmode='nested', fnest='restart')
