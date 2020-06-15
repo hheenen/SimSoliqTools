@@ -264,7 +264,11 @@ class MDtraj(DataMDtraj):
         # bin center
         binc = (bins[0:-1] + bins[1:])/2
  
-        return({'binc':binc,'hists':hist_dicts})
+        # add substrate indice for unification of densities
+        type_subs = self.get_substrate_types()
+        type_subs = [symbols[i] for i in type_subs]
+        
+        return({'binc':binc,'hists':hist_dicts,'k_substrate':type_subs})
 
 
     def _get_solvent_indices(self, snapshot=0, smol=[8,2], rcut=1.3):

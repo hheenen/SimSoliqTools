@@ -23,8 +23,12 @@ def isolate_solvent_density(density_data):
         dictionary of density data os solvent adjusted to substrate
     
     """
-    # since mdtraj-object not available -- take lowest coordinate from density
-    e_substrate = _retrieve_substratekey_from_density(density_data)
+    if 'k_substrate' not in density_data:
+        # since mdtraj-object not available -- take lowest coordinate from density
+        e_substrate = _retrieve_substratekey_from_density(density_data)
+    else:
+        e_substrate = density_data['k_substrate']
+
     density_out = adjust_density_to_substrate(density_data, e_substrate)
     # remove non-solvent keys
     density_out['hists'] = {k:density_out['hists'][k] \
@@ -38,7 +42,8 @@ def _retrieve_substratekey_from_density(density_data):
     """ 
       helper function to retrieve substrate element from density
       density is 1-D property, substrate is assumed to be located
-      at the minimum of the 1D coordinate
+      at the minimum of the 1D coordinate; this is only included
+      to read density data not including substrate information
     
     """
     # all density keys
@@ -48,13 +53,13 @@ def _retrieve_substratekey_from_density(density_data):
     for i in range(len(ks)):
         ind = np.where(density_data['hists'][ks[i]] != 0.0)[0]
         kind[i,:] = [ind.min(), ind.max()]
-    # substrate indice for minimum occurrence
+    # substrate indice for minimum occurrence - flawed can only be one
     sind = kind[:,0].argmin()
     
     # make sure that substrate is isolated!
     assert np.all([kind[sind,1] < kind[k,0] for k in range(len(ks)) \
         if k != sind])
-    return(ks[sind])
+    return([ks[sind]])
 
 
 def adjust_density_to_substrate(dens, esub):
@@ -62,7 +67,7 @@ def adjust_density_to_substrate(dens, esub):
       helper function to align density histogram excluding substrate
     """
     # find where substrate is in density profile
-    indm = np.where(dens['hists'][esub] != 0.0)[0]
+    indm = max([np.where(dens['hists'][ek] != 0.0)[0] for ek in esub])
     dens['binc'] = dens['binc'][indm[-1]+1:]
     for k in dens['hists']:
         dens['hists'][k] = dens['hists'][k][indm[-1]+1:]
