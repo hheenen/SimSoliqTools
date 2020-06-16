@@ -35,5 +35,6 @@ def get_inds_atoms(atoms,inds):
     """
     return(Atoms(numbers=atoms.get_atomic_numbers()[inds],\
                  positions=atoms.get_positions()[inds,:],\
-                 cell=atoms.get_cell()))
+                 cell=atoms.get_cell(),
+                 tags=atoms.get_tags()[inds]))
 

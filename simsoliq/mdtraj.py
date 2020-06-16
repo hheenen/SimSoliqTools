@@ -404,7 +404,8 @@ class MDtraj(DataMDtraj):
         """
         # get atoms object of snapshot
         snap = self.get_single_snapshot(snapshot)
-        
+        snap.set_tags(np.arange(len(snap)))
+
         # isolate solvent indices
         solv = self._get_solvent_indices(snapshot)
         ind_solv = list(solv.keys()) + \
@@ -432,6 +433,7 @@ class MDtraj(DataMDtraj):
         """
         # get atoms object of snapshot
         snap = self.get_single_snapshot(snapshot)
+        snap.set_tags(np.arange(len(snap)))
         
         # isolate solvent indices
         solv = self._get_solvent_indices(snapshot)

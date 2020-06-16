@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import numpy as np
-from ase.symbols import chemical_symbols
+from ase.data import chemical_symbols as symbols
 from simsoliq.io import init_mdtraj
 from simsoliq.plotting.standard_plots import plot_density
 from simsoliq.analyze.density import isolate_solvent_density, get_peak_integral, \
