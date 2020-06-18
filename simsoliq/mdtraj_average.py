@@ -138,6 +138,10 @@ def average_densities(mdtraj_list, height_axis=2, tstart=0):
         # average by number of summed up histograms
         for k in av_dens['hists']:
             av_dens['hists'][k] /= len(comp_dict[comp])
+        
+        # add k_substrate - should all be same
+        av_dens.update({'k_substrate':dens['k_substrate']})
+        
         comp_dens.update({comp:av_dens})
     return(comp_dens)
 
