@@ -236,7 +236,7 @@ class DataMDtraj(object):
 
         # find subfolders in `singlepoints`
         sp_sub = [f for f in os.listdir(sp_path) \
-            if os.path.isdir(sp_path+'/'+f)]
+            if os.path.isdir(sp_path+'/'+f) and f[:7] == 'sp_step']
 
         # setup timesteps if none given
         if len(timesteps) == 0:
