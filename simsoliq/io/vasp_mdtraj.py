@@ -420,13 +420,11 @@ def get_vasp_wf(sp_path, **kwargs):
       from LOCPOT and OUTCAR
     
     """
-
     ef = get_sp_efermi(sp_path)
     evac = get_sp_vacpot(sp_path, **kwargs)
     
     # by default take refernce `before` dipole correction (higher z-coordinate)
     evac = evac[0]
-    
     wf = evac - ef
     return(wf)
 
