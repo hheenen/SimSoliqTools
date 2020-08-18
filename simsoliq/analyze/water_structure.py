@@ -122,6 +122,20 @@ def evaluate_h2o_adsorption(md_traj, site_dict, dchs=2.55):
 
     # NOTE: for now use mdtraj based water identify --> to make hash based list (assuming no adsorbate)
     sollist = partition_solvent_composition(md_traj)
+    # need to skip non-adsorbate parts of trajectory (temporary) - sinlge length sollist needed
+    nsub = len(md_traj._get_substrate_indices())
+    natoms = len(md_traj.get_single_snapshot(n=0))
+    nskip = 0; wonly = []; lwonly = []
+    for i in range(len(sollist)):
+        nsolv = len(sollist[i]['solv_inds'])
+        if natoms - nsub - nsolv != 0:
+            nskip += len(sollist[i]['traj_inds'])
+        else:
+            wonly.append(i); lwonly.append(len(sollist[i]['traj_inds']))
+    sollist = [sollist[wonly[np.argmax(lwonly)]]] # longest water-only traj
+    if nskip > 0:
+        print("warning: %i snapshots skipped -- due to bad water composition"%nskip)
+
     if len(sollist) > 1:
         raise Exception('changing water composition! --> likely adsorbate present Not finally implemented')
     wts = md_traj._get_solvent_indices(snapshot=sollist[0]['traj_inds'][0])
@@ -192,11 +206,13 @@ def summarize_h2o_adsorption_output(dout, tstart=0):
     dads = {s:dout['sh2o'][s][np.where(dout['sh2o'][s][:,0] >= tstart)[0]] \
         for s in dout['sh2o'] if len(dout['sh2o'][s]) > 0}
     tlen = dout['tlen'] - tstart
+    print(dout.keys())
+    tags = dout['tags']
     
     # counter for site-type
-    nsites = {stype:0 for stype in dads} 
+    nsites = {tags[stype]:0 for stype in dads} 
     for s in dads:
-        nsites[s] += len(dads[s]) #number of entries
+        nsites[tags[s]] += len(dads[s]) #number of entries
     nsites.update({'tot':sum([nsites[s] for s in nsites])})
 
     # average over trajectory length

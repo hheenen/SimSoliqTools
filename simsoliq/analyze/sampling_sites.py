@@ -117,7 +117,7 @@ def _filter_sites_cell(sites,cell):
     return(sites[nind,:])
 
 
-def visualize_sites(mdtraj, facet, slabsize):
+def visualize_sites(mdtraj, facet, slabsize, view=True):
     """
       function to visualize sites for ASE-slabs
       see parameters in `get_slab_sites`
@@ -125,7 +125,6 @@ def visualize_sites(mdtraj, facet, slabsize):
     """
     site_data = get_slab_sites(mdtraj, facet, slabsize)
     sites = site_data['coord']
-    print(sites)
     
     traj0 = mdtraj.get_single_snapshot(0)
     ind_subs = mdtraj._get_substrate_indices()
@@ -134,7 +133,10 @@ def visualize_sites(mdtraj, facet, slabsize):
     from ase.visualize import view
     from ase.atoms import Atoms
     sa = Atoms(numbers=np.ones(sites[:,0].size)*2.,positions=sites,cell=slab.get_cell())
-    view(slab+sa)
+    if view:
+        view(slab+sa)
+    else:
+        return(slab+sa)
 
 
 def get_top_slab_atoms(mdtraj, site_data={}):
