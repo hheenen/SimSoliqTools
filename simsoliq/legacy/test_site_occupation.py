@@ -27,94 +27,94 @@ from itertools import *
 import hashlib
 import base64
 
-def get_sample_sites(tatoms,surface,repeat):
-    # get fixed atom type
-    try:
-        type_fix = np.unique(tatoms.get_atomic_numbers()[tatoms.constraints[0].index])[0]
-    except IndexError:
-        type_fix = np.unique(tatoms.get_atomic_numbers())[-1]
-        print('missing constraints in traj-file - assuming heaviest element for slab')
-
-    # make surface sites
-    lats = {'Cu':3.56878996, 'Pt': 3.934289636, 'Au': 4.167052576}
-    # only ASE-oriented cells
-    site_dict, vec_dict, psite_dict = get_Cu_slab_adsorption_sites(\
-        surface,layer=9,vacuum=10,cell_shift=[0.,0.],lat=lats[chemical_symbols[type_fix]])
-    
-    shift_cell = tatoms.get_cell();
-    if np.array_equal(np.sort(surface),[1,1,2]):
-        shift_cell[0,0] /= repeat[0]/3. # x - step length
-        shift_cell[1,1] /= repeat[1] # y
-    elif np.array_equal(surface,[1,1,1]):
-        c = fcc111(chemical_symbols[type_fix], a=lats[chemical_symbols[type_fix]], \
-                                    size=(1,1,4), vacuum=10.0, orthogonal=False)
-        shift_cell = c.get_cell()
-    else:
-        raise Exception('cell %s not implemented'%str(surface))
-    psite_dict = _extendsites(site_dict,shift_cell)
-    
-    ##################################################
-    # stupid hack - used wrong functionality of CatKit
-    if np.array_equal(np.sort(surface),[1,1,2]):
-        correction = {'Cu':2.524/2.0}
-        for site in ['bridge-a','bridge-c']:
-            nsites = deepcopy(psite_dict[site]); nsites[:,1] += correction[chemical_symbols[type_fix]]
-            psite_dict[site] = np.vstack((psite_dict[site],nsites))
-    if np.array_equal(surface,[1,1,1]):
-        correction = {'Cu':[[-0.64,1.0925],[0.64,1.0925]],\
-                      'Au':[[-0.737,1.276],[1.473,0.0]],\
-                      'Pt':[[-0.6955,1.2045],[0.6955, 1.2045]]}
-        ncorr = []
-        for corr in correction[chemical_symbols[type_fix]]:
-            nsites = deepcopy(psite_dict['bridge'])
-            nsites[:,0] += corr[0]; nsites[:,1] += corr[1]
-            ncorr.append(nsites)
-        psite_dict['bridge'] = np.vstack(tuple([psite_dict['bridge']]+ncorr))
-    ##################################################
-    
-    # filter sites
-    psite_dict = {p:_filter_sites_cell(psite_dict[p],tatoms.get_cell()) \
-                                                for p in psite_dict}
-    # prep sites
-    stags = []; sites = np.array([])
-    for site in psite_dict:
-        stags += [site]*psite_dict[site][:,0].size
-        if sites.size == 0:
-            sites = psite_dict[site]
-        else:
-            sites = np.vstack((sites,psite_dict[site]))
-    zmax = sites[:,2].max()
-    
-    ind_slab = np.where(tatoms.get_atomic_numbers() == type_fix)[0]
-    vz = tatoms.positions[ind_slab,2].max() - zmax + 1.0
-    sites[:,2] += vz
-    
-    scaled_sites = np.linalg.solve(tatoms.get_cell(complete=True).T,
-                                     sites.T).T
-
-   ## to visualize
-   #sa = Atoms(numbers=np.ones(sites[:,0].size)*2.,positions=sites,cell=tatoms.get_cell())
-   #view(tatoms+sa)
-   ##write("tocheck_atoms.traj",tatoms+sa)
-   #assert False
-    return({'coord':sites,'scaled_coord':scaled_sites,'tags':np.array(stags)})
-
-def _extendsites(sitedict,cell): #copied from site-enumeration
-    shifts = [[a,b] for a in [-3,-2,-1,0,1,2,3,4,5,6] for b in [-3,-2,-1,0,1,2,3,4,5,6]]
-    psitedict = {sk:[] for sk in sitedict}
-    for shift in shifts:
-        for sk in sitedict:
-            pos = deepcopy(sitedict[sk])
-            pos[:2] += np.dot(shift,cell[:2,:2])
-            psitedict[sk].append(pos)
-    psitedict = {sk:np.array(psitedict[sk]) for sk in psitedict}
-    return(psitedict)
-    
-def _filter_sites_cell(sites,cell):
-    lxy = np.array([cell[0,0],cell[1,1]])
-    nind = [i for i in range(sites[:,0].size) if not \
-        np.any((sites[i,:2] < 0).tolist()+(sites[i,:2] - lxy >= 0).tolist())]
-    return(sites[nind,:])
+#def get_sample_sites(tatoms,surface,repeat):
+#    # get fixed atom type
+#    try:
+#        type_fix = np.unique(tatoms.get_atomic_numbers()[tatoms.constraints[0].index])[0]
+#    except IndexError:
+#        type_fix = np.unique(tatoms.get_atomic_numbers())[-1]
+#        print('missing constraints in traj-file - assuming heaviest element for slab')
+#
+#    # make surface sites
+#    lats = {'Cu':3.56878996, 'Pt': 3.934289636, 'Au': 4.167052576}
+#    # only ASE-oriented cells
+#    site_dict, vec_dict, psite_dict = get_Cu_slab_adsorption_sites(\
+#        surface,layer=9,vacuum=10,cell_shift=[0.,0.],lat=lats[chemical_symbols[type_fix]])
+#    
+#    shift_cell = tatoms.get_cell();
+#    if np.array_equal(np.sort(surface),[1,1,2]):
+#        shift_cell[0,0] /= repeat[0]/3. # x - step length
+#        shift_cell[1,1] /= repeat[1] # y
+#    elif np.array_equal(surface,[1,1,1]):
+#        c = fcc111(chemical_symbols[type_fix], a=lats[chemical_symbols[type_fix]], \
+#                                    size=(1,1,4), vacuum=10.0, orthogonal=False)
+#        shift_cell = c.get_cell()
+#    else:
+#        raise Exception('cell %s not implemented'%str(surface))
+#    psite_dict = _extendsites(site_dict,shift_cell)
+#    
+#    ##################################################
+#    # stupid hack - used wrong functionality of CatKit
+#    if np.array_equal(np.sort(surface),[1,1,2]):
+#        correction = {'Cu':2.524/2.0}
+#        for site in ['bridge-a','bridge-c']:
+#            nsites = deepcopy(psite_dict[site]); nsites[:,1] += correction[chemical_symbols[type_fix]]
+#            psite_dict[site] = np.vstack((psite_dict[site],nsites))
+#    if np.array_equal(surface,[1,1,1]):
+#        correction = {'Cu':[[-0.64,1.0925],[0.64,1.0925]],\
+#                      'Au':[[-0.737,1.276],[1.473,0.0]],\
+#                      'Pt':[[-0.6955,1.2045],[0.6955, 1.2045]]}
+#        ncorr = []
+#        for corr in correction[chemical_symbols[type_fix]]:
+#            nsites = deepcopy(psite_dict['bridge'])
+#            nsites[:,0] += corr[0]; nsites[:,1] += corr[1]
+#            ncorr.append(nsites)
+#        psite_dict['bridge'] = np.vstack(tuple([psite_dict['bridge']]+ncorr))
+#    ##################################################
+#    
+#    # filter sites
+#    psite_dict = {p:_filter_sites_cell(psite_dict[p],tatoms.get_cell()) \
+#                                                for p in psite_dict}
+#    # prep sites
+#    stags = []; sites = np.array([])
+#    for site in psite_dict:
+#        stags += [site]*psite_dict[site][:,0].size
+#        if sites.size == 0:
+#            sites = psite_dict[site]
+#        else:
+#            sites = np.vstack((sites,psite_dict[site]))
+#    zmax = sites[:,2].max()
+#    
+#    ind_slab = np.where(tatoms.get_atomic_numbers() == type_fix)[0]
+#    vz = tatoms.positions[ind_slab,2].max() - zmax + 1.0
+#    sites[:,2] += vz
+#    
+#    scaled_sites = np.linalg.solve(tatoms.get_cell(complete=True).T,
+#                                     sites.T).T
+#
+#   ## to visualize
+#   #sa = Atoms(numbers=np.ones(sites[:,0].size)*2.,positions=sites,cell=tatoms.get_cell())
+#   #view(tatoms+sa)
+#   ##write("tocheck_atoms.traj",tatoms+sa)
+#   #assert False
+#    return({'coord':sites,'scaled_coord':scaled_sites,'tags':np.array(stags)})
+#
+#def _extendsites(sitedict,cell): #copied from site-enumeration
+#    shifts = [[a,b] for a in [-3,-2,-1,0,1,2,3,4,5,6] for b in [-3,-2,-1,0,1,2,3,4,5,6]]
+#    psitedict = {sk:[] for sk in sitedict}
+#    for shift in shifts:
+#        for sk in sitedict:
+#            pos = deepcopy(sitedict[sk])
+#            pos[:2] += np.dot(shift,cell[:2,:2])
+#            psitedict[sk].append(pos)
+#    psitedict = {sk:np.array(psitedict[sk]) for sk in psitedict}
+#    return(psitedict)
+#    
+#def _filter_sites_cell(sites,cell):
+#    lxy = np.array([cell[0,0],cell[1,1]])
+#    nind = [i for i in range(sites[:,0].size) if not \
+#        np.any((sites[i,:2] < 0).tolist()+(sites[i,:2] - lxy >= 0).tolist())]
+#    return(sites[nind,:])
     
 def __get_ads_ind(atoms, exclude=[]):
     try:
@@ -260,80 +260,80 @@ def _filter_distances(ainds, pos_list, cell, ssites, dcut):
                 'distances':ds[mininds,:]}})
     return(ddict)
 
-def sample_solvent(atoms):
-    ''' (1) identify_water for each snapshot
-        (2) take mean/dominant assignment from 10 surrounding snaphots
-            Exceptions for deviating assignments - possible future issue
-            --> return one list of inds if always same
-            --> return time-limits if it is not
-    '''
-    # read all indices
-    ma_ind = np.zeros((len(atoms),len(atoms[0])))#,dtype=bool)
-    for i in range(len(atoms)):
-        idw = identify_water(atoms[i])
-        indw = [io for io in idw] + \
-            np.array([ih for io in idw for ih in idw[io]]).flatten().tolist()
-        ma_ind[i,indw] = 1.0 #True
-    
-    # just fyi - check if same number of waters
-    if not len(np.unique(ma_ind.sum(axis=1))) == 1:
-        print('Warning: non-constant identification of water')
-    
-    # averaging water
-    av_ma_ind = np.zeros(ma_ind.shape)
-    da = 20 # should only show averages dominant > 40 fs (change to 100fs?)
-    for i in range(ma_ind[:,0].size): # here could be problems in OH-traj
-        av = ma_ind[max(0,i-da):min(i+da,ma_ind[:,0].size),:].mean(axis=0)
-        av = np.around(av,0)
-        av_ma_ind[i,:] = av
-    ma_ind = av_ma_ind
-    
-    # sample snippets of constant solvent composition
-    nsolv, nfreq = np.unique(ma_ind.sum(axis=1),return_counts=True)
-    out_sol = []
-    for ns in nsolv: #iterate changing solvent composition
-        ind = np.where(ma_ind.sum(axis=1) == ns)[0]
-        lpart = [list(map(itemgetter(1), g)) for k, g in \
-                    groupby(enumerate(ind), lambda x: x[0]-x[1])]
-        parts = [[len(lpart[i]),min(lpart[i]),max(lpart[i])] for i in range(len(lpart))]
-        inds = [ma_ind[int((p[1]+p[2])/2.0),:] for p in parts] #av. solv. inds
-        
-        # concatenate parts of trajectory with identical solvend
-        # and stability of > 1 ps
-        hshs = [_arr2hash(ind) for ind in inds]; uhshs = list(set(hshs))
-        sol = {h:{'traj_inds':np.array([],dtype=int), 'solv_inds':None} for h in uhshs}
-        for i in range(len(hshs)):
-            sol[hshs[i]]['solv_inds'] = np.where(inds[i] == True)[0]
-            if parts[i][0] >= 1000: # 'stable' intervals > 1ps
-                sol[hshs[i]]['traj_inds'] = \
-                    np.hstack((sol[hshs[i]]['traj_inds'], lpart[i]))
-        # convert to list
-        sol = [sol[h] for h in sol if len(sol[h]['traj_inds']) > 0]
-        
-        # add minor "unstable" trajectory snipets
-        for i in range(len(inds)):
-            if parts[i][0] < 1000:
-                sol.append({'traj_inds':np.array(lpart[i]), \
-                            'solv_inds':np.where(inds[i] == True)[0]})
-        
-        # check for solvent consistency in snippets
-        if not np.all([np.array_equal(np.mean(ma_ind[s['traj_inds'],:], \
-            axis=0), ma_ind[s['traj_inds'][0],:]) for s in sol]):
-            print('Warning: changing water composition for nsolv:%i'%ns)
-            print(np.mean(ma_ind[sol[0]['traj_inds'],:],axis=0))
-            print(ma_ind[sol[0]['traj_inds'][0],:])
-            raise Exception("changing water composition")
-        out_sol = out_sol + sol
-    
-    # check consistent traj length
-    assert sum([len(s['traj_inds']) for s in out_sol]) == ma_ind[:,0].size
-    return(out_sol)
+#def sample_solvent(atoms):
+#    ''' (1) identify_water for each snapshot
+#        (2) take mean/dominant assignment from 10 surrounding snaphots
+#            Exceptions for deviating assignments - possible future issue
+#            --> return one list of inds if always same
+#            --> return time-limits if it is not
+#    '''
+#    # read all indices
+#    ma_ind = np.zeros((len(atoms),len(atoms[0])))#,dtype=bool)
+#    for i in range(len(atoms)):
+#        idw = identify_water(atoms[i])
+#        indw = [io for io in idw] + \
+#            np.array([ih for io in idw for ih in idw[io]]).flatten().tolist()
+#        ma_ind[i,indw] = 1.0 #True
+#    
+#    # just fyi - check if same number of waters
+#    if not len(np.unique(ma_ind.sum(axis=1))) == 1:
+#        print('Warning: non-constant identification of water')
+#    
+#    # averaging water
+#    av_ma_ind = np.zeros(ma_ind.shape)
+#    da = 20 # should only show averages dominant > 40 fs (change to 100fs?)
+#    for i in range(ma_ind[:,0].size): # here could be problems in OH-traj
+#        av = ma_ind[max(0,i-da):min(i+da,ma_ind[:,0].size),:].mean(axis=0)
+#        av = np.around(av,0)
+#        av_ma_ind[i,:] = av
+#    ma_ind = av_ma_ind
+#    
+#    # sample snippets of constant solvent composition
+#    nsolv, nfreq = np.unique(ma_ind.sum(axis=1),return_counts=True)
+#    out_sol = []
+#    for ns in nsolv: #iterate changing solvent composition
+#        ind = np.where(ma_ind.sum(axis=1) == ns)[0]
+#        lpart = [list(map(itemgetter(1), g)) for k, g in \
+#                    groupby(enumerate(ind), lambda x: x[0]-x[1])]
+#        parts = [[len(lpart[i]),min(lpart[i]),max(lpart[i])] for i in range(len(lpart))]
+#        inds = [ma_ind[int((p[1]+p[2])/2.0),:] for p in parts] #av. solv. inds
+#        
+#        # concatenate parts of trajectory with identical solvend
+#        # and stability of > 1 ps
+#        hshs = [_arr2hash(ind) for ind in inds]; uhshs = list(set(hshs))
+#        sol = {h:{'traj_inds':np.array([],dtype=int), 'solv_inds':None} for h in uhshs}
+#        for i in range(len(hshs)):
+#            sol[hshs[i]]['solv_inds'] = np.where(inds[i] == True)[0]
+#            if parts[i][0] >= 1000: # 'stable' intervals > 1ps
+#                sol[hshs[i]]['traj_inds'] = \
+#                    np.hstack((sol[hshs[i]]['traj_inds'], lpart[i]))
+#        # convert to list
+#        sol = [sol[h] for h in sol if len(sol[h]['traj_inds']) > 0]
+#        
+#        # add minor "unstable" trajectory snipets
+#        for i in range(len(inds)):
+#            if parts[i][0] < 1000:
+#                sol.append({'traj_inds':np.array(lpart[i]), \
+#                            'solv_inds':np.where(inds[i] == True)[0]})
+#        
+#        # check for solvent consistency in snippets
+#        if not np.all([np.array_equal(np.mean(ma_ind[s['traj_inds'],:], \
+#            axis=0), ma_ind[s['traj_inds'][0],:]) for s in sol]):
+#            print('Warning: changing water composition for nsolv:%i'%ns)
+#            print(np.mean(ma_ind[sol[0]['traj_inds'],:],axis=0))
+#            print(ma_ind[sol[0]['traj_inds'][0],:])
+#            raise Exception("changing water composition")
+#        out_sol = out_sol + sol
+#    
+#    # check consistent traj length
+#    assert sum([len(s['traj_inds']) for s in out_sol]) == ma_ind[:,0].size
+#    return(out_sol)
 
-def _arr2hash(arr):
-    arr[arr == 0] = 0
-    hashed = hashlib.md5(arr).digest()
-    hashed = base64.urlsafe_b64encode(hashed)
-    return(hashed)
+#def _arr2hash(arr):
+#    arr[arr == 0] = 0
+#    hashed = hashlib.md5(arr).digest()
+#    hashed = base64.urlsafe_b64encode(hashed)
+#    return(hashed)
 
 def _group_site_inds(sinds):
     sinds_p = {}

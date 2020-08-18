@@ -8,7 +8,7 @@ import numpy as np
 from copy import deepcopy
 
 
-def isolate_solvent_density(density_data):
+def isolate_solvent_density(mdtraj):
     """
       return isolated density of solvent contributions only
  

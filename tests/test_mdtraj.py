@@ -45,6 +45,12 @@ class TestMDTraj(unittest.TestCase):
             for k in np.unique(slabs[i].get_atomic_numbers()):
                 self.assertEqual(np.where(slabs[i].get_atomic_numbers() == k)[0].size, ref_data[i][k])
 
+    def test_get_time_average_solvent_indices(self):
+        a = init_mdtraj("data/Pt111_24H2O_OH_long/vasprun.xml", fmat='vasp')
+        ma_ind = a._get_time_average_solvent_indices(savepkl=False)
+        c_ma_ind = np.loadtxt("data/Pt111_24H2O_OH_long/solvent_indices.txt")
+        self.assertTrue(np.array_equal(ma_ind, c_ma_ind))
+
 
 if __name__ == '__main__':
     unittest.main()

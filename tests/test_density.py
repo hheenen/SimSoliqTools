@@ -59,4 +59,7 @@ class TestDensity(unittest.TestCase):
         dint_n = get_peak_integral(dens, xlim=None, Acell=Acell)
         self.assertEqual(np.around(dint_n['Osolv'][1],5), 7.46394)
 
+if __name__ == '__main__':
+    unittest.main()
+
 

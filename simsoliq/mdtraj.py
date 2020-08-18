@@ -12,7 +12,8 @@ from simsoliq.io.data_mdtraj import DataMDtraj
 from simsoliq.ase_atoms_utils import get_type_indices, get_type_atoms, \
                                      get_inds_atoms
 from simsoliq.geometry_utils import _correct_vec
-from simsoliq.helper_functions import load_pickle_file, write_pickle_file
+from simsoliq.helper_functions import load_pickle_file, write_pickle_file, \
+                                      pkl_decorator_factory
 
 # NOTE for documentation needs to be reported that some functions rely on fixed setup --> interface normal to z-coordinate and metal on lowest
 
@@ -165,6 +166,7 @@ class MDtraj(DataMDtraj):
         return(area)
 
 
+    @pkl_decorator_factory('mdtraj_density')
     def get_density_profile(self, height_axis=2, tstart=0, savepkl=True):
         """
           method to return average density profile of trajectory
@@ -187,16 +189,7 @@ class MDtraj(DataMDtraj):
         
         """
         
-        pklfile = self.bpath+'/mdtraj_density.pkl'
-        # process density
-        if not savepkl or not os.path.isfile(pklfile):
-            dens_data = self._get_density_profile(height_axis, tstart)
-        # read density
-        elif savepkl:
-            dens_data = load_pickle_file(pklfile)
-        # save density
-        if savepkl:
-            write_pickle_file(pklfile, dens_data)
+        dens_data = self._get_density_profile(height_axis, tstart)
 
         return(dens_data)
 
@@ -271,6 +264,49 @@ class MDtraj(DataMDtraj):
         return({'binc':binc,'hists':hist_dicts,'k_substrate':type_subs})
 
 
+    @pkl_decorator_factory('mdtraj_solvent_indices')
+    def _get_time_average_solvent_indices(self, smol=[8,2], rcut=1.3, savepkl=True):
+        """
+          method to return `smoothed` water indices for the whole trajectory
+ 
+          Parameters
+          ----------
+          smol : list (length=2)
+            identifier with [0] type of central solvent atom 
+                            [1] number of coordinating atoms
+          rcut : float
+            cutoff to use between central and coordinating atoms
+          savepkl : bool
+            save density data into pkl file for faster reading
+ 
+          Returns
+          -------
+          ma_ind : np.ndarray
+            array [ntrajlen, natoms] indicating (via 1/0) if an atom is part
+            of the solvent structure
+        
+        """
+        self._retrieve_atom_data() # all snapshots are required
+        # (1) read all indices
+        traj0 = self.get_single_snapshot(0)
+        ma_ind = np.zeros((self.mdtrajlen,len(traj0)))
+        for i in range(self.mdtrajlen):
+            idw = self._get_solvent_indices(snapshot=i)
+            indw = [io for io in idw] + \
+                np.array([ih for io in idw for ih in idw[io]]).flatten().tolist()
+            ma_ind[i,indw] = 1.0
+
+        # (2) averaging water - throw out outliers
+        av_ma_ind = np.zeros(ma_ind.shape)
+        da = 20 # should only show averages dominant > 40 fs
+        for i in range(ma_ind[:,0].size):
+            av = ma_ind[max(0,i-da):min(i+da,ma_ind[:,0].size),:].mean(axis=0)
+            av = np.around(av,0)
+            av_ma_ind[i,:] = av
+        ma_ind = av_ma_ind
+        return(ma_ind)
+
+
     def _get_solvent_indices(self, snapshot=0, smol=[8,2], rcut=1.3):
         """
           method to return structured solvent indices of a snapshot
@@ -320,6 +356,32 @@ class MDtraj(DataMDtraj):
             if sum(type_R[ind_neigh]) == smol[1]:
                 solv.update({o:ind_rest[ind_neigh]})
         return(solv)
+
+
+    def _get_substrate_indices(self):
+        """
+          method to return indices substrate (estimated)
+ 
+          Returns
+          -------
+          ind_subs : list
+              list of (estimated) substrate indices
+        """
+        # get solvent indices, for robustness take longer index list of
+        #                      first and last snapshot
+        traj0 = self.get_single_snapshot(0)
+        atno = traj0.get_atomic_numbers()
+        solv = [self._get_solvent_indices(snapshot=n) for n in [0,-1]]
+        nsolv = [len(s) for s in solv]
+        solv = solv[np.argmax(nsolv)]
+        assert np.all([len(solv[k])==2 for k in solv])
+        ind_solv = list(solv.keys()) + \
+            list(np.array(list(solv.values())).flatten())
+        # get substrate indeces
+        type_subs = self.get_substrate_types()
+        ind_subs = [i for i in range(len(traj0)) if atno[i] in type_subs \
+            and i not in ind_solv]
+        return(ind_subs)
 
 
     def get_traj_composition(self):
