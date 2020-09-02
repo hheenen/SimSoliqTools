@@ -457,23 +457,27 @@ def _read_potential_vasp(f):
     return(d0, atoms)
 
 
-def _determine_vacuum_reference(d0, atoms, gtol=1e-3):
+def _determine_vacuum_reference(d0, atoms, gtol=1e-3, zref=None):
     """ 
       helper-function to automatically obtain vacuum reference
       hardcoded to z-axis, theoratically usable independent of code
     
     """
     # gtol == tolerance for when potential is 'converged'/flat in V/AA
-    # vacuum region - first guess
+    # vacuum region - first guess;
     z=np.linspace(0,atoms.cell[2,2],len(d0))
     z_vac = find_max_empty_space(atoms,edir=3)*atoms.cell[2,2]
     ind_vac = np.absolute(z - z_vac).argmin()
+    if zref != None: # if preselected vac reference position given
+        ind_vac = np.absolute(z - zref).argmin()
 
     # double potential for simpler analysis at PBC
     d02 = np.hstack((d0,d0))
     # investigate at gradient
     gd02 = np.absolute(np.gradient(d02))
-    iv2 = ind_vac+d0.size
+    iv2 = ind_vac
+    if ind_vac < d02.size/4.: # if in first half of cell
+        iv2 += d0.size
     # search max gradient as center of dipole correction withint 3 AA
     diA = np.where(z > 1.0)[0][0]
     imax = iv2-diA*2 + gd02[iv2-diA*2:iv2+diA*2].argmax()

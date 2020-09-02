@@ -29,4 +29,5 @@ class TestSinglepoints(unittest.TestCase):
         dchg = a.chgfunc_sp("data/Pt111_24H2O_x/singlepoints_wf/sp_step00000")
         self.assertEqual(np.around(dchg.sum(),13),552.0000139832506)
 
-
+if __name__ == '__main__':
+    unittest.main()
