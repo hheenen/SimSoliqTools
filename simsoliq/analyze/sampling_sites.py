@@ -16,7 +16,7 @@ from simsoliq.ase_atoms_utils import get_inds_atoms
 # (x) visualization function for metal centers
 
 
-def get_slab_sites(mdtraj, facet, slabsize):
+def get_slab_sites(mdtraj, facet, slabsize, ind_subs=[]):
     """
       function to retrieve ASE slab based sites and adjust (to substrate) 
  
@@ -28,6 +28,8 @@ def get_slab_sites(mdtraj, facet, slabsize):
         name of facet for which to prepare sites, i.e. '100', '111', '110', '211' 
       slabsize : tuple
         dimensions of slab
+      ind_subs : list/np-array (optional)
+        array to give substrate indeces
  
       Returns
       -------
@@ -41,7 +43,8 @@ def get_slab_sites(mdtraj, facet, slabsize):
     
     # get slab -- isolate substrate, analyse lattice constant scaling
     traj0 = mdtraj.get_single_snapshot(0)
-    ind_subs = mdtraj._get_substrate_indices()
+    if len(ind_subs) == 0:  # TODO: also add an option to overwrite in mdtraj
+        ind_subs = mdtraj._get_substrate_indices()
     slab = get_inds_atoms(traj0, ind_subs)
 
     # get cell
