@@ -142,7 +142,7 @@ def visualize_sites(mdtraj, facet, slabsize, view=True):
         return(slab+sa)
 
 
-def get_top_slab_atoms(mdtraj, site_data={}):
+def get_top_slab_atoms(mdtraj, site_data={}, ind_subs=[]):
     """
       function to retrieve the top atoms of a slab -- easiest way to count 
       estimate adsorption and complementary to site-model
@@ -154,6 +154,8 @@ def get_top_slab_atoms(mdtraj, site_data={}):
       site_data : dict (optional)
         dict of site-information (see `get_slab_sites`) to sort atomic 
         centers to sites
+      ind_subs : list/np-array (optional)
+        array to give substrate indeces
  
       Returns
       -------
@@ -166,7 +168,8 @@ def get_top_slab_atoms(mdtraj, site_data={}):
     from simsoliq.geometry_utils import get_CN, _correct_vec
     # make slab to identify top row atoms 
     traj0 = mdtraj.get_single_snapshot(0)
-    ind_subs = mdtraj._get_substrate_indices()
+    if len(ind_subs) == 0:  # TODO: also add an option to overwrite in mdtraj
+        ind_subs = mdtraj._get_substrate_indices()
     slab = get_inds_atoms(traj0, ind_subs)
 
     # take CNs to identify top row

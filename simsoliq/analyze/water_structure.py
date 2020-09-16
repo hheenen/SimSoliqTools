@@ -90,7 +90,7 @@ def partition_solvent_composition(md_traj):
 
 
 # TODO: make an `ensemlbe` function for h2o adsorption (and others)
-def evaluate_h2o_adsorption(md_traj, site_dict, dchs=2.55):
+def evaluate_h2o_adsorption(md_traj, site_dict, dchs=2.55, ind_subs=[]):
     """
       function to output solvent (h2o) adsorption onto the substrate
       NOTE: this is only written for adsorbate-free trajectories
@@ -103,6 +103,8 @@ def evaluate_h2o_adsorption(md_traj, site_dict, dchs=2.55):
         information about adsorption sites as given by get_slab_sites in
         simsoliq.analyze.sampling_sites
       dchs : global distance criterion for water adsorption
+      ind_subs : list/np-array (optional)
+        array to give substrate indeces
  
       Returns
       -------
@@ -112,7 +114,7 @@ def evaluate_h2o_adsorption(md_traj, site_dict, dchs=2.55):
     """
     
     # evalute top-atom layer (relevant for water adsorption on steps)
-    top_data = get_top_slab_atoms(md_traj, site_dict)
+    top_data = get_top_slab_atoms(md_traj, site_dict, ind_subs=ind_subs)
     
     # TODO: can use mdtraj functions here? NOTE: skipped for now so H2O adsorption for clean surfaces can be used
     # pre-determine indeces for water -- can use mdtraj functions???? 
@@ -123,7 +125,9 @@ def evaluate_h2o_adsorption(md_traj, site_dict, dchs=2.55):
     # NOTE: for now use mdtraj based water identify --> to make hash based list (assuming no adsorbate)
     sollist = partition_solvent_composition(md_traj)
     # need to skip non-adsorbate parts of trajectory (temporary) - sinlge length sollist needed
-    nsub = len(md_traj._get_substrate_indices())
+    nsub = len(ind_subs)
+    if len(ind_subs) == 0:
+        nsub = len(md_traj._get_substrate_indices())
     natoms = len(md_traj.get_single_snapshot(n=0))
     nskip = 0; wonly = []; lwonly = []
     for i in range(len(sollist)):
