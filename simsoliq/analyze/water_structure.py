@@ -221,7 +221,7 @@ def summarize_h2o_adsorption_output(dout, tstart=0):
 
     # average over trajectory length
     for s in nsites:
-        nsites[s] /= tlen
+        nsites[s] /= float(tlen)
 
     return(nsites)
 
