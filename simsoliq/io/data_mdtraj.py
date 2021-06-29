@@ -38,6 +38,8 @@ class DataMDtraj(object):
           `level`  - look for further output in `bpath` following wildcard
                      character `*` in `fident`. Automatically invoked if
                      wildcard is found in `fident`.
+          `level_nested` - look for output `fident` in folders named `fnest*` 
+                     with wildcard character in `bpath`
       fnest : str, optional
           only used in combination with concmode=`nested`
       safe_asetraj_files : bool
