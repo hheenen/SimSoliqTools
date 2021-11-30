@@ -29,13 +29,8 @@ scripts
 Clone the repo to your preferred location
 ```bash
 git clone https://github.com/hheenen/SimSoliqTools.git
+pip install -e SimSoliqTools
 ```
-
-Add to your ``.bashrc`` file a pythonpath to your repository, i.e.
-```bash
-export PYTHONPATH=path-to-your-repo/SimSoliqTools:$PYTHONPATH
-```
-(NOTE: proper installation scripts are coming)
 
 Ensure proper funtionality by testing the unit tests:
 ```bash

@@ -1,0 +1,23 @@
+{
+  "name":     "SimSoliq",
+  "packages": ["simsoliq"],
+  "author":   "Hendrik H. Heenen",
+  "author_email": "heenen@fhi-berlin.mpg.de",
+  "description": "This project is a collective of tools for the analysis and post processing of (molecular dynamics) simulations of solid/liquid interfaces",
+  "url":  "https://github.com/hheenen/SimSoliqTools",
+  "license": "MIT License",
+  "classifiers": [
+    "Programming Language :: Python",
+    "Intended Audience :: Science/Research",
+    "Natural Language :: English"
+  ],
+  "version": "0.0.1",
+  "include_package_data": true,
+  "setup_requires": [
+  ],
+  "python_requires": ">=2.7.0",
+  "install_requires": [
+    "ase>=1.0.0",
+    "numpy>=1.0.0"
+  ]
+}
