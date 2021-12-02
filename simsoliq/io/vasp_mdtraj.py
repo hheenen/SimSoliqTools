@@ -29,6 +29,7 @@ def read_mdtraj_vasp(fpath, fname, **kwargs):
     mdtraj.efunc = _read_energies_vasp
     mdtraj.afunc = _read_vasp_atoms
     mdtraj.tfunc = _read_vasp_timedata
+    mdtraj.magfunc = _read_vasp_magmom
     mdtraj.sp_prep = _prep_vasp_singlepiont
     mdtraj.efunc_sp = _get_sp_epot
     mdtraj.fefunc_sp = get_sp_efermi
@@ -158,6 +159,33 @@ def _read_vasp_timedata(wpath, fident):
     #TODO: needs proper implementation hard-coded    
     timedat = {"timeunit":['fs'], "timestep":[1]}
     return(timedat)
+    
+
+def _read_vasp_magmom(wpath, fident):
+    """
+      function to read meta data for timestep used in trajectory
+ 
+      Parameters
+      ----------
+      wpath : str
+          name of path in which output file lies
+      fident : str
+          name / identifier of file to read
+ 
+      Returns
+      -------
+      mags : list
+          includes magnetic moment per timestep from OSZICAR
+    
+    """
+    with open(wpath+'/OSZICAR',"r") as fp:
+        lines = fp.readlines()
+    lines = [line for line in lines if line.find("T=") != -1]
+    mags = []
+    for i in lines:
+        mag=float(i.split("mag=")[1])
+        mags.append(mag)
+    return(mags)
 
 
 def _prep_vasp_singlepiont(cpath, bpath, atoms, **kwarks):

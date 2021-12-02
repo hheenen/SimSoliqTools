@@ -50,7 +50,9 @@ def _level_nested_iterator(efunc, wpath0, fident, fnest):
     # collect data from outfiles
     data = []
     for outf in outfiles:
-        data.append(efunc(wpath0, outf))
+        f_sub = outf.split('/')[0]
+        data.append(efunc(wpath0+'/'+f_sub, fident))
+        #data.append(efunc(wpath0, outf))
     dat = _concat_data(data)
     return(dat)
 

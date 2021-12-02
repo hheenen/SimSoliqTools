@@ -62,6 +62,7 @@ class DataMDtraj(object):
         self.efunc = None
         self.afunc = None
         self.tfunc = None
+        self.magfunc = None
         self.sp_prep = None
         self.efunc_sp = None
         self.fefunc_sp = None
@@ -114,6 +115,23 @@ class DataMDtraj(object):
         else:
             #print(self.mdtrajlen, len(self.mdtraj_atoms))
             assert self.mdtrajlen == len(self.mdtraj_atoms)
+
+
+    def read_magmom_data(self):
+        """ helper function to run io routines on magmom,
+            saves data internally in `edat` and `mdtrajlen`
+        """
+        magmom = self._iterator(self.magfunc)
+#        TODO
+#        if len(self.edat) == 0:
+#            self.edat = self._iterator(self.efunc)
+#            # add for output information
+#            self.edat.update({'timestep':self.timestep, \
+#                'timeunit':self.timeunit})
+        if self.mdtrajlen == 0:
+            self._retrieve_energy_data()
+        assert self.mdtrajlen == len(magmom)
+        return magmom # TODO: properly integrate into io/layer
 
 
     def _initialize_timestep(self):
