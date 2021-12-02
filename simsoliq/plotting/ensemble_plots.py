@@ -18,7 +18,6 @@ from ase.data import chemical_symbols as symbols
 from simsoliq.plotting.standard_plots import set_plotting_env, writefig
 
 
-
 # global parameters for time conversion
 tdict = {'ns':1e-9, 'ps':1e-12, 'fs':1e-15}
 

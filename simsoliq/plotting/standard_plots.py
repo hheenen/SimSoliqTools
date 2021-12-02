@@ -18,6 +18,9 @@ from ase.data.colors import jmol_colors
 from ase.data import chemical_symbols as symbols
 
 
+
+
+
 def set_plotting_env(width=3.37,height=3.37/ golden_ratio *1.5/2,\
                     lrbt=[0.135,0.80,0.25,0.95],fsize=9.0):
     """
