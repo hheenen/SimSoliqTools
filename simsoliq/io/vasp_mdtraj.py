@@ -2,7 +2,7 @@
 This module contains functionality for creating an mdtraj-object
 capable of reading VASP formats
 
-(for later) This module contains functions for reading vasp
+This module contains functions for reading vasp
 input to be inherited by an mdtraj object
 
 """

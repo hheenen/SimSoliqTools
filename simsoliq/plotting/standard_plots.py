@@ -192,7 +192,8 @@ def _plot_xe_vs_time(filename,dat,label,yfunc,tstart=1e3,tunit='ps'):
 #############################################################################
 
 
-def plot_density(filename, binc, hist_dicts, integral={}, dens=False):
+def plot_density(filename, binc, hist_dicts, integral={}, dens=False, \
+    folder='output'):
     """
       funtion to plot the density profile for individual or
       averaged trajectories 
@@ -224,7 +225,7 @@ def plot_density(filename, binc, hist_dicts, integral={}, dens=False):
     ax.legend(loc='best',prop={'size':7})
     ax.set_xlim(0.0,ax.get_xlim()[1])
     
-    writefig(filename)
+    writefig(filename, folder=folder)
 
 
 def _plot_density(binc, hist_dicts, ax, integral={}, dens=False, \
@@ -274,7 +275,7 @@ def _plot_density(binc, hist_dicts, ax, integral={}, dens=False, \
 #############################################################################
 
 def plot_profile(filename, x, y, vertline=0.0, xmarkings=[], xlim=None, \
-    ylabel='', xlabel=''):
+    ylabel='', xlabel='', folder='output'):
     """
       funtion to plot the any generic profile i.e. electrostatic potential
       
@@ -312,5 +313,5 @@ def plot_profile(filename, x, y, vertline=0.0, xmarkings=[], xlim=None, \
     if xlim != None:
         ax.set_xlim(xlim)
 
-    writefig(filename)
+    writefig(filename, folder=folder)
 

@@ -55,7 +55,8 @@ def init_mdtraj(filename, fmat='vasp', **kwargs):
     # check if file format known
     if fmat not in fmat_dict:
         raise NotImplementedError("%s is an unknown format"%(fmat))
-    if fname.split('*')[0] not in fmat_dict[fmat]:
+    if fname.split('*')[0] not in fmat_dict[fmat]['pre'] and \
+        fname.split('.')[-1] not in fmat_dict[fmat]['post']:
         raise NotImplementedError("%s is unknown to format %s"%(fname, fmat))
     
     # import functions
@@ -67,7 +68,10 @@ def init_mdtraj(filename, fmat='vasp', **kwargs):
 
 
 fmat_dict = {
-    'vasp':["vasprun.xml","OUTCAR","vasprun"]
+    'vasp':{'pre':["vasprun.xml","OUTCAR","vasprun"], \
+           'post':[]},
+    'ase':{'pre':[], \
+               'post':['traj']}
     }
 
 

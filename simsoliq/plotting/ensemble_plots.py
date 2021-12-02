@@ -21,8 +21,8 @@ from simsoliq.plotting.standard_plots import set_plotting_env, writefig
 # global parameters for time conversion
 tdict = {'ns':1e-9, 'ps':1e-12, 'fs':1e-15}
 
-def plot_running_av_ensemble(filename, edat, surftag = {}, tstart=5000, \
-    tunit='ps', timestep=1, timeunit='fs'): 
+def plot_running_av_ensemble(filename, edat, surftag = {}, cdict = {}, \
+    tstart=5000, tunit='ps', timestep=1, timeunit='fs', folder='output'): 
     """
       function to produce a collective plot for running average of many 
       trajectories of different types
@@ -48,7 +48,8 @@ def plot_running_av_ensemble(filename, edat, surftag = {}, tstart=5000, \
     """
 
     # rename tags to include `clean` tag
-    for key in edat:
+    keys = list(edat.keys())
+    for key in keys:
         if len(key.split('_')) == 2:
             edat[key+'_clean'] = edat.pop(key)
     
@@ -58,8 +59,11 @@ def plot_running_av_ensemble(filename, edat, surftag = {}, tstart=5000, \
     clr = {subtags[i]:clrlist[i] for i in range(len(subtags))}
     
     # sort for subplots and make tags if none are given (remove underscores)
-    clist = list(set(['_'.join(ck.split('_')[:-1]) for ck in edat])); clist.sort()
-    cdict = {ck:{ekey for ekey in edat if ekey.find(ck) != -1} for ck in clist}
+    if len(cdict) == 0:
+        clist = list(set(['_'.join(ck.split('_')[:-1]) for ck in edat])); clist.sort()
+        cdict = {ck:{ekey for ekey in edat if ekey.find(ck) != -1} for ck in clist}
+    else:
+        clist = list(cdict.keys()); clist.sort()
     if len(surftag) == 0:
         surftag = {ck:'-'.join(ck.split('_')) for ck in clist}
     
@@ -105,7 +109,7 @@ def plot_running_av_ensemble(filename, edat, surftag = {}, tstart=5000, \
    #[axes[a].set_yticklabels([]) for a in range(1,len(axes))]
    #plt.subplots_adjust(wspace=0.05)
 
-    writefig(filename)
+    writefig(filename, folder=folder)
 
 
 
