@@ -2,6 +2,11 @@
 This module contains functions to analyze the time-propagation
 of the solvent (and adsorbate) of an mdtraj object
 
+Adsorption is counted partitioned to surface sites; 
+reactions with possibly present adsorbates or among water
+molecules are tracked and can be filtered if wished outside
+of statistics
+
 """
 
 import numpy as np
@@ -21,13 +26,14 @@ from operator import itemgetter
     # (x) continue with putting next snipped into analysis package
     # (x) make function to compute snipped analysis for mdtraj object
     # (x) make separate module for site-creation
-    # (8) make function H2O adsorption
-    # (9) make function for adsorbate tracking
+    # (x) make function H2O adsorption
+    # (9) make function for adsorbate tracking !!!!
 
 
     # NOTE: eventual split-up of this module if applicable
 
-def partition_solvent_composition(md_traj): 
+def partition_solvent_composition(md_traj):
+    # TODO: add output for this
     """
       parition trajectory into snippets of constant solvent composition
       this is particularly important of trajectories where adsorbates
@@ -50,17 +56,15 @@ def partition_solvent_composition(md_traj):
     out_sol = []
     for ns in nsolv: #iterate changing solvent composition
         ind = np.where(ma_ind.sum(axis=1) == ns)[0]
-        # TODO: lpart function probably in helper_function
         lpart = [list(map(itemgetter(1), g)) for k, g in \
                     groupby(enumerate(ind), lambda x: x[0]-x[1])]
         parts = [[len(lpart[i]),min(lpart[i]),max(lpart[i])] for i in range(len(lpart))]
         inds = [ma_ind[int((p[1]+p[2])/2.0),:] for p in parts] #av. solv. inds
 
-        # NOTE: not sure if this separation is really necessary
         # concatenate parts of trajectory with identical solvent
         # and stability of > 1 ps
         hshs = [_arr2hash(ind) for ind in inds]; uhshs = list(set(hshs))
-        sol = {h:{'traj_inds':np.array([],dtype=int), 'solv_inds':None} for h in uhshs}
+        sol = {h:{'traj_inds':np.array([],dtype=int), 'solv_inds':None, 'wts':None} for h in uhshs}
         for i in range(len(hshs)):
             sol[hshs[i]]['solv_inds'] = np.where(inds[i] == True)[0]
             if parts[i][0] >= 1000: # 'stable' intervals > 1ps
@@ -70,6 +74,7 @@ def partition_solvent_composition(md_traj):
         sol = [sol[h] for h in sol if len(sol[h]['traj_inds']) > 0]
         
         # add minor "unstable" trajectory snipets
+        # note that this is to exclude 'reactions' from statistics (if wanted)
         for i in range(len(inds)):
             if parts[i][0] < 1000:
                 sol.append({'traj_inds':np.array(lpart[i]), \
@@ -87,10 +92,10 @@ def partition_solvent_composition(md_traj):
     # check consistent traj length
     assert sum([len(s['traj_inds']) for s in out_sol]) == ma_ind[:,0].size
     return(out_sol)
-
+            
 
 # TODO: make an `ensemlbe` function for h2o adsorption (and others)
-def evaluate_h2o_adsorption(md_traj, site_dict, dchs=2.55, ind_subs=[]):
+def evaluate_h2o_adsorption(md_traj, site_dict, dchs=2.55, ind_subs=[], md_filter="adsorbate_frequency"):
     """
       function to output solvent (h2o) adsorption onto the substrate
       NOTE: this is only written for adsorbate-free trajectories
@@ -99,12 +104,15 @@ def evaluate_h2o_adsorption(md_traj, site_dict, dchs=2.55, ind_subs=[]):
       Parameters
       ----------
       md_traj : mdtraj object
-      site_dict : dict (TODO: optional)
+      site_dict : dict (TODO: optional --> call site-fct internally)
         information about adsorption sites as given by get_slab_sites in
         simsoliq.analyze.sampling_sites
       dchs : global distance criterion for water adsorption
       ind_subs : list/np-array (optional)
         array to give substrate indeces
+      md_filer : str or list of indeces
+        filter for solvent composition: "adsorbate_frequency", "None" or 
+        list of indeces which water structure snippets to use
  
       Returns
       -------
@@ -116,46 +124,45 @@ def evaluate_h2o_adsorption(md_traj, site_dict, dchs=2.55, ind_subs=[]):
     # evalute top-atom layer (relevant for water adsorption on steps)
     top_data = get_top_slab_atoms(md_traj, site_dict, ind_subs=ind_subs)
     
-    # TODO: can use mdtraj functions here? NOTE: skipped for now so H2O adsorption for clean surfaces can be used
-    # pre-determine indeces for water -- can use mdtraj functions???? 
-  # ainds0, winds0 = _get_water_adsorbate_inds(f)
-  # winds0 = [i for i in winds0 if a[0].get_chemical_symbols()[i] in ['H','O']] # remove Na+ from water
-  # dat = eval_sys_inds(a, ainds0, winds0)
 
-    # NOTE: for now use mdtraj based water identify --> to make hash based list (assuming no adsorbate)
+    # obtain solvent composition - add information
     sollist = partition_solvent_composition(md_traj)
-    # need to skip non-adsorbate parts of trajectory (temporary) - sinlge length sollist needed
-    nsub = len(ind_subs)
-    if len(ind_subs) == 0:
-        nsub = len(md_traj._get_substrate_indices())
-    natoms = len(md_traj.get_single_snapshot(n=0))
-    nskip = 0; wonly = []; lwonly = []
-    for i in range(len(sollist)):
-        nsolv = len(sollist[i]['solv_inds'])
-        if natoms - nsub - nsolv != 0:
-            nskip += len(sollist[i]['traj_inds'])
-        else:
-            wonly.append(i); lwonly.append(len(sollist[i]['traj_inds']))
-    sollist = [sollist[wonly[np.argmax(lwonly)]]] # longest water-only traj
+    sollist = _add_wts_solvent_composition(md_traj, sollist)
+    sollist = _add_adsorbate_solvent_composition(md_traj, sollist, ind_subs=ind_subs)
+
+
+    ############################################################
+    # filter by "adsorbate frequency" (make external function) #
+    if md_filter == "adsorbate_frequency":
+        sol_i = _filter_adsorbate_frequency(md_traj, sollist)
+        
+    elif md_filter == "None":
+        sol_i = list(range(len(sollist)))
+
+    else: # given indece array which solvent-structure snippets to use
+        sol_i = md_filter
+
+    # always filter problematic water structures out (have no wts)
+    sol_i = [i for i in sol_i if len(sollist[i]['wts']) > 0]
+        
+    nskip = sum([len(sollist[i]['traj_inds']) for i in range(len(sollist)) \
+        if i not in sol_i])
+    sollist = [sollist[i] for i in sol_i]
+
     if nskip > 0:
-        print("warning: %i snapshots skipped -- due to bad water composition"%nskip)
+        print("warning: %i snapshots skipped -- due to filter &/or bad water composition"%nskip)
+    ############################################################
 
-    if len(sollist) > 1:
-        raise Exception('changing water composition! --> likely adsorbate present Not finally implemented')
-    wts = md_traj._get_solvent_indices(snapshot=sollist[0]['traj_inds'][0])
-    dat = {_arr2hash(sollist[0]['solv_inds']):{'winds':sollist[0]['solv_inds'], 'ainds':[], 'tinds':sollist[0]['traj_inds'], 'wts':wts}}
-
-    # data-format twisted: site-based
+    # data-format twisted: site-based output-data
     d = {s:[] for s in range(len(site_dict['tags']))}
     
     ssites = site_dict['coord']; tagme = top_data['itags']
-    count = 0; dsm = 1.0 #dsm is distance of site-position from atom
+    dsm = 1.0 #dsm is distance of site-position from atom
     a = md_traj.get_traj_atoms()
     cell = a[0].get_cell()
     
     for i in range(0,md_traj.mdtrajlen):
-        # choose right adsorbate configuration
-        dd = [dat[hsh] for hsh in dat if i in dat[hsh]['tinds']]
+        dd = [sollist[ii] for ii in range(len(sollist)) if i in sollist[ii]['traj_inds']]
         if len(dd) > 0: # only if valid solvent structure
             dd = dd[0]
             spos = a[i].get_scaled_positions()
@@ -177,6 +184,7 @@ def evaluate_h2o_adsorption(md_traj, site_dict, dchs=2.55, ind_subs=[]):
                     not np.array_equal(d[tagme[dind[0]]][-1], [i,io])):
                     min_ind = dind[0]
                     d[tagme[min_ind]].append([i,io])
+    
     for ste in d:
         d[ste] = np.array(d[ste])
     dout = {'tags':site_dict['tags'], 'tlen':len(a), 'sh2o':d}
@@ -188,6 +196,88 @@ def __get_distances_order(parray, pt, cell):
     dist = np.linalg.norm(dvec, axis=1)
     mind = dist.argsort(); dist = dist[mind] # only append minimum
     return(dist, mind)
+
+
+def _add_wts_solvent_composition(md_traj, out_sol):
+    """
+      helper function to add water structure dict `wts` solvent_composition
+      (see function `partition_solvent_composition`). wts is not added
+      if no matching solv_inds are found
+    
+    """
+    # add wts which are wind consistent
+    for i in range(len(out_sol)):
+        sol = out_sol[i]
+        winds = sol['solv_inds']
+        for t in sol['traj_inds']:
+            wts = md_traj._get_solvent_indices(snapshot=t)
+            wts_inds = _convert_wts_inds(wts)
+            if np.array_equal(np.sort(winds), wts_inds):
+                sol.update({'wts':wts})
+                break
+        if 'wts' not in sol: # problematic water structure
+            sol.update({'wts':{}})
+    return(out_sol)
+
+
+def _convert_wts_inds(wts):
+    """
+      helper function to convert water structure dict `wts` to list
+      of water indeces
+    
+    """
+    o = list(wts.keys())
+    h = [ww for w in wts.values() for ww in w]
+    return(np.sort(h+o))
+    
+
+def _add_adsorbate_solvent_composition(md_traj, sollist, ind_subs=[]):
+    """
+      helper function to add adsorbate indices to solvent_composition
+      (see function `partition_solvent_composition`).
+      TODO: may also include option to give list (custom filter)
+    
+    """
+    if len(ind_subs) == 0:
+        ind_subs = md_traj._get_substrate_indices()
+    atoms0 = md_traj.get_single_snapshot(n=0)
+    natoms = len(atoms0)
+
+    # iteratre sollist and determine wts, ainds per composition
+    for i in range(len(sollist)):
+        isolv = sollist[i]['solv_inds']
+        ainds = [i for i in range(natoms) if i not in np.hstack((isolv, ind_subs))]
+        sollist[i].update({'ads_inds':ainds})
+
+    return(sollist)
+
+    
+def _filter_adsorbate_frequency(md_traj, sollist):
+    """
+      helper function to folter through solvent_composition
+      (see function `partition_solvent_composition`) and 
+      return only snippets with most frequent adsorbate (other
+      snippets may contain different adsorbate due to reactions)
+    
+    """
+    atoms0 = md_traj.get_single_snapshot(n=0)
+    sym = atoms0.get_chemical_symbols()
+    ads = [''.join(np.sort([sym[ii] for ii in sollist[i]['ads_inds']])) \
+        for i in range(len(sollist))]
+    tad = [len(sollist[i]['traj_inds']) for i in range(len(sollist))]
+    
+    # count occurrences of adsorbates
+    uads = {a:0 for a in ads}
+    for i in range(len(ads)):
+        uads[ads[i]] += tad[i]
+    vals = list(uads.values())
+    c_ads = list(uads.keys())[np.argmax(vals)]
+
+    if len(set(ads)) > 1:
+        print("filtered for %s among %s"%(c_ads, str(set(ads))))
+
+    sol_i = [i for i in range(len(sollist)) if ads[i] == c_ads]
+    return(sol_i)
 
 
 def summarize_h2o_adsorption_output(dout, tstart=0):
@@ -226,74 +316,3 @@ def summarize_h2o_adsorption_output(dout, tstart=0):
     return(nsites)
 
 
-
-
-
-# TODO: incorporate later!!
-#########################################################################################
-#########################################################################################
-#########################################################################################
-def _get_water_adsorbate_inds(f):
-    sdat = _load_pickle_file('%s/site_sampling.pkl'%f)
-    if np.all([f.find(m) == -1 for m in ['OCCHO','CHO','COH','CO','OH','OOH','Li+','K+','Na+']]):
-        ainds = []; winds = np.where(sdat[0]['atomic_numbers'] != symbls.index(f[:2]))[0]
-    else:
-        rads = f.split('_')[-2]; success = False
-        for i in range(len(sdat)):
-            ainds = sdat[i]['ads_inds']
-            winds = sdat[i]['water_inds']
-            atno = sdat[i]['atomic_numbers']
-            aord = ''.join(np.sort([symbls[atno[ii]] for ii in ainds]))
-            if aord == ''.join(np.sort([s for s in rads])).strip('+'):
-                success = True
-                break
-        if not success:
-            if f in backup_ainds:
-                ainds = backup_ainds[f]
-                winds = np.array([i for i in range(atno.size) \
-                    if i not in ainds and atno[i] != symbls.index(f[:2])])
-            else:
-                raise Exception('could not determine ainds for %s'%f)
-    # weird exception - not found before (doesn't matter for msd)
-   #if f == 'Cu211_15H2O_OCCHO_05':
-
-    return(ainds, winds)
-
-def eval_sys_inds(a, ainds0, winds0):
-    # set-up starting inds
-    ainds0 = np.array(ainds0); winds0 = np.array(winds0)
-    ainds = ainds0; winds = winds0; allinds = np.array(winds.tolist()+ainds.tolist())
- 
-    for i in range(len(a)): # find 1st wts!
-        wts = identify_water(a[i])
-        fwts = np.sort([w for w in wts] + [wi for o in wts for wi in wts[o]])
-        if np.array_equal(winds,fwts):
-            break
-    
-    nskip = 0; nchange = 0
-    dat = {_make_hash(winds0):{'winds':winds0, 'ainds':ainds0, 'tinds':[], 'wts':wts}}
-    for i in range(len(a)):
-        wts = identify_water(a[i]) # may sort same H to different Os
-        fwts = np.unique([w for w in wts] + [wi for o in wts for wi in wts[o]])
-        # handle special cases
-        if fwts.size != winds.size:
-            nskip += 1
-            continue # skip any non-identifyable
-        else:
-            if not np.array_equal(winds,fwts):
-                winds = fwts
-                # need to determine new ainds
-                ainds = np.array([ii for ii in allinds if ii not in winds])
-                nchange += 1
-                #print('winds changed in step %i to %s'%(i,str(ainds)))
-        # make entry:
-        hsh = _make_hash(winds)
-        if hsh not in dat:
-            dat.update({hsh:{'winds':winds, 'ainds':ainds, 'wts':wts, 'tinds':[]}})
-        dat[hsh]['tinds'].append(i)
-    print('skipped %i images / adsorbates changed %i times'%(nskip,nchange))
-    return(dat)
-
-#########################################################################################
-#########################################################################################
-#########################################################################################

@@ -38,9 +38,9 @@ cd SimSoliqTools/tests
 python -m unittest discover .
 ```
 
-### Documentation and AIP reference
+### Documentation
 
-TODO with Sphinx
+No documentation yet. Please check the examples
 
 ### Dependencies
 
