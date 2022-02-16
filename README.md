@@ -50,6 +50,5 @@ available:
 - matplotlib
 - ASE (atomic simulation environment)
 - python-sphinx (for documentation -- TODO)
-- CatKit or pyMatGen (for slab site analysis)
 
 
