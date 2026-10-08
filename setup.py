@@ -1,6 +1,6 @@
 import json, os
 #import numpy as np
-from setuptools import setup, Extension
+from setuptools import setup, Extension, find_packages
 
 
 if __name__ == '__main__':
@@ -15,6 +15,7 @@ if __name__ == '__main__':
 
     with open('setup.json', 'r') as info:
         kwargs = json.load(info)
+    kwargs["packages"] = find_packages()
 
     '''
     # assuming gcc, set (aggressive) optimization flags,
